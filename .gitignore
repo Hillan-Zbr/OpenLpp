@@ -1,0 +1,14 @@
+# Base de données
+data/
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Node
+node_modules/
+dist/
+
+# Divers
+*.wal
