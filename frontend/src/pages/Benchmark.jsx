@@ -96,31 +96,84 @@ export default function Benchmark() {
   const [mode, setMode]             = useState('index')
   const [showLabels, setShowLabels] = useState(false)
 
+  // Domaines
+  const [domaines, setDomaines]     = useState([])
+  const [selD1, setSelD1]           = useState(null)
+  const [selD2, setSelD2]           = useState(null)
+  const [selD4, setSelD4]           = useState(null)
+
   useEffect(() => {
     fetch('/api/regions').then(r => r.json()).then(d =>
       setRegions(d.map(r => ({ value: r.code, label: r.label })))
     )
+    fetch('/api/domaines').then(r => r.json()).then(setDomaines)
   }, [])
 
+  // Options domaine2 selon domaine1 sélectionné
+  const d2Options = selD1
+    ? (domaines.find(d => d.label === selD1.value)?.children || [])
+        .map(c => ({ value: c.label, label: c.label }))
+    : []
+
+  // Options domaine4 selon domaine2 sélectionné
+  const d4Options = selD1 && selD2
+    ? (domaines.find(d => d.label === selD1.value)
+        ?.children.find(c => c.label === selD2.value)
+        ?.domaine4 || [])
+        .filter(Boolean)
+        .map(d => ({ value: d, label: d }))
+    : []
+
+  // Charger les codes LPP selon domaine sélectionné OU recherche textuelle
   useEffect(() => {
-    const t = setTimeout(() => {
+    if (selD1) {
+      // Filtre par domaine
       setLppLoading(true)
-      fetch(`/api/codes-lpp?q=${encodeURIComponent(lppQuery)}`)
+      const params = new URLSearchParams()
+      params.set('domaine1', selD1.value)
+      if (selD2) params.set('domaine2', selD2.value)
+      if (selD4) params.set('domaine4', selD4.value)
+      fetch(`/api/codes-lpp-domaine?${params}`)
         .then(r => r.json())
         .then(d => { setLppOptions(d.map(x => ({ value: x.code, label: x.label }))); setLppLoading(false) })
-    }, 300)
-    return () => clearTimeout(t)
-  }, [lppQuery])
+    } else {
+      // Recherche textuelle
+      const t = setTimeout(() => {
+        setLppLoading(true)
+        fetch(`/api/codes-lpp?q=${encodeURIComponent(lppQuery)}`)
+          .then(r => r.json())
+          .then(d => { setLppOptions(d.map(x => ({ value: x.code, label: x.label }))); setLppLoading(false) })
+      }, 300)
+      return () => clearTimeout(t)
+    }
+  }, [lppQuery, selD1, selD2, selD4])
 
   const fetchData = useCallback(() => {
     if (!selLpp || selRegs.length === 0) return
     setLoading(true)
-    const params = new URLSearchParams({ code_lpp: selLpp.value, year_start: yearRange[0], year_end: yearRange[1] })
-    selRegs.forEach(r => params.append('regions', r.value))
-    fetch(`/api/evolution?${params}`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false) })
-  }, [selLpp, selRegs, yearRange])
+
+    if (selLpp.value === '__domaine__') {
+      // Mode agrégation domaine
+      const params = new URLSearchParams({
+        domaine1: selD1.value,
+        year_start: yearRange[0],
+        year_end: yearRange[1],
+      })
+      if (selD2) params.set('domaine2', selD2.value)
+      if (selD4) params.set('domaine4', selD4.value)
+      selRegs.forEach(r => params.append('regions', r.value))
+      fetch(`/api/evolution-domaine?${params}`)
+        .then(r => r.json())
+        .then(d => { setData(d); setLoading(false) })
+    } else {
+      // Mode code LPP individuel
+      const params = new URLSearchParams({ code_lpp: selLpp.value, year_start: yearRange[0], year_end: yearRange[1] })
+      selRegs.forEach(r => params.append('regions', r.value))
+      fetch(`/api/evolution?${params}`)
+        .then(r => r.json())
+        .then(d => { setData(d); setLoading(false) })
+    }
+  }, [selLpp, selRegs, yearRange, selD1, selD2, selD4])
 
   const chartData = (() => {
     if (!data.length) return []
@@ -149,6 +202,45 @@ export default function Benchmark() {
       <div className="page-body">
         <div className="card" style={{ marginBottom: 28 }}>
           <div className="card-title">Paramètres d'analyse</div>
+
+          {/* Filtres domaines */}
+          <div style={{ marginBottom: 20, padding: '16px', background: 'rgba(15,45,74,0.04)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>
+              Filtrer par domaine <span style={{ fontStyle: 'italic', textTransform: 'none', letterSpacing: 0 }}>(optionnel — affine la liste des codes LPP)</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div className="form-group">
+                <label>Domaine 1</label>
+                <Select classNamePrefix="rs" isClearable
+                  options={domaines.map(d => ({ value: d.label, label: d.label }))}
+                  value={selD1}
+                  onChange={v => { setSelD1(v); setSelD2(null); setSelD4(null); setSelLpp(null) }}
+                  placeholder="Tous les domaines…"
+                />
+              </div>
+              <div className="form-group">
+                <label>Domaine 2</label>
+                <Select classNamePrefix="rs" isClearable
+                  options={d2Options}
+                  value={selD2}
+                  isDisabled={!selD1}
+                  onChange={v => { setSelD2(v); setSelD4(null); setSelLpp(null) }}
+                  placeholder={selD1 ? 'Tous…' : '— choisir D1 d\'abord'}
+                />
+              </div>
+              <div className="form-group">
+                <label>Domaine 4</label>
+                <Select classNamePrefix="rs" isClearable
+                  options={d4Options}
+                  value={selD4}
+                  isDisabled={!selD2}
+                  onChange={v => { setSelD4(v); setSelLpp(null) }}
+                  placeholder={selD2 ? 'Tous…' : '— choisir D2 d\'abord'}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="form-grid">
             <div className="form-group">
               <label>
@@ -167,6 +259,16 @@ export default function Benchmark() {
                   singleValue: (b) => ({ ...b, whiteSpace: 'normal', fontSize: '0.82rem' }),
                 }}
               />
+              {selD1 && lppOptions.length > 0 && (
+                <button onClick={() => setSelLpp({ value: '__domaine__', label: `Tous les codes — ${selD2?.value || selD1?.value}` })} style={{
+                  marginTop: 6, padding: '4px 12px', fontSize: '0.72rem',
+                  background: 'transparent', color: 'var(--navy)',
+                  border: '1px solid var(--navy)', borderRadius: 'var(--radius)',
+                  cursor: 'pointer', fontFamily: 'var(--font-body)',
+                }}>
+                  📋 Sélectionner tous les codes ({lppOptions.length})
+                </button>
+              )}
             </div>
             <div className="form-group">
               <label>
