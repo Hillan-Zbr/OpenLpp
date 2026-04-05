@@ -9,12 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-jvectormap/core": "^1.0.4",
+    "@react-jvectormap/france": "^1.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-select": "^5.8.0",
-    "react-simple-maps": "^3.0.0",
     "react-slider": "^2.0.6",
-    "recharts": "^2.12.7"
+    "recharts": "^2.12.7",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",

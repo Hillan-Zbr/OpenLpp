@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill:*)",
+      "Bash(kill 22060)",
+      "Bash(netstat -ano)"
+    ]
+  }
+}

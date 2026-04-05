@@ -64,6 +64,16 @@ def get_domaines():
         children = []
         for d2, d4_set in sorted(d2_map.items()):
             d4_list = sorted([d for d in d4_set if d])
+            # Vérifier s'il y a des codes sans domaine4
+            con2 = get_db()
+            has_null = con2.execute("""
+                SELECT COUNT(*) FROM ref_classification
+                WHERE domaine2 = ? AND exclure = FALSE
+                  AND (domaine4 IS NULL OR domaine4 = '')
+            """, [d2]).fetchone()[0]
+            con2.close()
+            if has_null > 0:
+                d4_list.append('(sans domaine 4)')
             children.append({"label": d2, "domaine4": d4_list})
         result.append({"label": d1, "children": children})
     return result
@@ -85,8 +95,11 @@ def get_codes_lpp_by_domaine(
         conditions.append("c.domaine2 = ?")
         params.append(domaine2)
     if domaine4:
-        conditions.append("c.domaine4 = ?")
-        params.append(domaine4)
+        if domaine4 == '(sans domaine 4)':
+            conditions.append("(c.domaine4 IS NULL OR c.domaine4 = '')")
+        else:
+            conditions.append("c.domaine4 = ?")
+            params.append(domaine4)
 
     query = f"""
         SELECT DISTINCT o.CODE_LPP, o.L_CODE_LPP
@@ -135,8 +148,11 @@ def get_evolution_domaine(
         conditions.append("c.domaine2 = ?")
         params.append(domaine2)
     if domaine4:
-        conditions.append("c.domaine4 = ?")
-        params.append(domaine4)
+        if domaine4 == '(sans domaine 4)':
+            conditions.append("(c.domaine4 IS NULL OR c.domaine4 = '')")
+        else:
+            conditions.append("c.domaine4 = ?")
+            params.append(domaine4)
 
     query = f"""
         SELECT
@@ -188,6 +204,66 @@ def get_evolution_domaine(
             "yoy_pct": yoy,
         })
     return result
+
+@app.get("/detail")
+def get_detail(
+    code_lpp: int = Query(default=None),
+    domaine1: str = Query(default=None),
+    domaine2: str = Query(default=None),
+    domaine4: str = Query(default=None),
+    regions: List[int] = Query(...),
+    year_start: int = Query(default=2020),
+    year_end: int = Query(default=2024),
+):
+    con = get_db()
+    placeholders_reg = ",".join(["?" for _ in regions])
+
+    conditions = [f"o.BEN_REG IN ({placeholders_reg})", "o.ANNEE BETWEEN ? AND ?"]
+    params = regions + [year_start, year_end]
+
+    if code_lpp:
+        conditions.append("o.CODE_LPP = ?")
+        params.append(code_lpp)
+    elif domaine1:
+        conditions.append("c.exclure = FALSE AND c.domaine1 = ?")
+        params.append(domaine1)
+        if domaine2:
+            conditions.append("c.domaine2 = ?")
+            params.append(domaine2)
+        if domaine4:
+            if domaine4 == '(sans domaine 4)':
+                conditions.append("(c.domaine4 IS NULL OR c.domaine4 = '')")
+            else:
+                conditions.append("c.domaine4 = ?")
+                params.append(domaine4)
+
+    join = "LEFT JOIN ref_classification c ON o.CODE_LPP = c.CODE_LPP" if domaine1 else "LEFT JOIN ref_classification c ON o.CODE_LPP = c.CODE_LPP"
+
+    query = f"""
+        SELECT
+            o.ANNEE, o.BEN_REG, o.CODE_LPP, o.L_CODE_LPP,
+            c.domaine1, c.domaine2, c.domaine3, c.domaine4,
+            SUM(o.QTE) AS QTE,
+            ROUND(SUM(o.REM), 2) AS REM,
+            ROUND(SUM(o.BSE), 2) AS BSE
+        FROM open_lpp o
+        {join}
+        WHERE {' AND '.join(conditions)}
+        GROUP BY o.ANNEE, o.BEN_REG, o.CODE_LPP, o.L_CODE_LPP,
+                 c.domaine1, c.domaine2, c.domaine3, c.domaine4
+        ORDER BY o.ANNEE, o.BEN_REG, o.CODE_LPP
+        LIMIT 2000
+    """
+    rows = con.execute(query, params).fetchall()
+    con.close()
+    return [
+        {
+            "annee": r[0], "ben_reg": r[1], "code_lpp": r[2], "l_code_lpp": r[3],
+            "domaine1": r[4], "domaine2": r[5], "domaine3": r[6], "domaine4": r[7],
+            "qte": r[8], "rem": r[9], "bse": r[10],
+        }
+        for r in rows
+    ]
 
 @app.get("/evolution")
 def get_evolution(
