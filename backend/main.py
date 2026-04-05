@@ -130,6 +130,145 @@ def search_codes_lpp(q: str = Query(default="", min_length=0)):
     con.close()
     return [{"code": r[0], "label": f"{r[0]} — {r[1]}"} for r in rows]
 
+@app.get("/moyenne-nationale")
+def get_moyenne_nationale(
+    code_lpp: int = Query(default=None),
+    domaine1: str = Query(default=None),
+    domaine2: str = Query(default=None),
+    domaine4: str = Query(default=None),
+    year_start: int = Query(default=2020),
+    year_end: int = Query(default=2024),
+):
+    con = get_db()
+    years = list(range(year_start, year_end + 1))
+
+    if code_lpp:
+        query = """
+            SELECT ANNEE,
+                ROUND(SUM(REM) / 100000.0, 4) AS rem_x100k,
+                COUNT(DISTINCT BEN_REG) AS nb_regions
+            FROM open_lpp
+            WHERE CODE_LPP = ? AND BEN_REG != 99
+              AND ANNEE BETWEEN ? AND ? AND REM > 0
+            GROUP BY ANNEE ORDER BY ANNEE
+        """
+        rows = con.execute(query, [code_lpp, year_start, year_end]).fetchall()
+    else:
+        conditions = ["c.exclure = FALSE", "c.domaine1 = ?", "o.BEN_REG != 99", "o.REM > 0"]
+        params = [domaine1]
+        if domaine2:
+            conditions.append("c.domaine2 = ?")
+            params.append(domaine2)
+        if domaine4:
+            if domaine4 == '(sans domaine 4)':
+                conditions.append("(c.domaine4 IS NULL OR c.domaine4 = '')")
+            else:
+                conditions.append("c.domaine4 = ?")
+                params.append(domaine4)
+        params += [year_start, year_end]
+        query = f"""
+            SELECT o.ANNEE,
+                ROUND(SUM(o.REM) / 100000.0, 4) AS rem_x100k,
+                COUNT(DISTINCT o.BEN_REG) AS nb_regions
+            FROM open_lpp o
+            JOIN ref_classification c ON o.CODE_LPP = c.CODE_LPP
+            WHERE {' AND '.join(conditions)}
+              AND o.ANNEE BETWEEN ? AND ?
+            GROUP BY o.ANNEE ORDER BY o.ANNEE
+        """
+        rows = con.execute(query, params).fetchall()
+
+    con.close()
+    # Moyenne = total / nb_regions
+    rem_by_year = {r[0]: round(r[1] / r[2], 4) if r[2] > 0 else None for r in rows}
+    rem_series = [rem_by_year.get(y) for y in years]
+
+    # Indice base 100
+    first = next((v for v in rem_series if v is not None and v > 0), None)
+    index_series = [
+        round((v / first) * 100, 2) if (v is not None and first) else None
+        for v in rem_series
+    ]
+    yoy = []
+    for i, y in enumerate(years):
+        if i == 0 or rem_series[i] is None or rem_series[i-1] is None or rem_series[i-1] == 0:
+            yoy.append(None)
+        else:
+            yoy.append(round(((rem_series[i] - rem_series[i-1]) / rem_series[i-1]) * 100, 2))
+
+    return {
+        "years": years,
+        "rem_x100k": rem_series,
+        "index_base100": index_series,
+        "yoy_pct": yoy,
+    }
+
+@app.get("/prescripteurs")
+def get_prescripteurs(
+    code_lpp: int = Query(default=None),
+    domaine1: str = Query(default=None),
+    domaine2: str = Query(default=None),
+    domaine4: str = Query(default=None),
+    regions: List[int] = Query(...),
+    year_start: int = Query(default=2020),
+    year_end: int = Query(default=2024),
+    limit: int = Query(default=10),
+):
+    con = get_db()
+    placeholders_reg = ",".join(["?" for _ in regions])
+
+    conditions = [f"o.BEN_REG IN ({placeholders_reg})", "o.ANNEE BETWEEN ? AND ?", "o.PSP_SPE IS NOT NULL"]
+    params = regions + [year_start, year_end]
+
+    if code_lpp:
+        conditions.append("o.CODE_LPP = ?")
+        params.append(code_lpp)
+        join = "LEFT JOIN ref_specialites s ON o.PSP_SPE = s.code"
+    else:
+        conditions.append("c.exclure = FALSE AND c.domaine1 = ?")
+        params.append(domaine1)
+        if domaine2:
+            conditions.append("c.domaine2 = ?")
+            params.append(domaine2)
+        if domaine4:
+            if domaine4 == '(sans domaine 4)':
+                conditions.append("(c.domaine4 IS NULL OR c.domaine4 = '')")
+            else:
+                conditions.append("c.domaine4 = ?")
+                params.append(domaine4)
+        join = "LEFT JOIN ref_classification c ON o.CODE_LPP = c.CODE_LPP LEFT JOIN ref_specialites s ON o.PSP_SPE = s.code"
+
+    query = f"""
+        SELECT
+            o.PSP_SPE,
+            COALESCE(s.libelle, 'Code ' || CAST(o.PSP_SPE AS VARCHAR)) AS libelle_spe,
+            SUM(o.QTE) AS qte_totale,
+            ROUND(SUM(o.REM), 2) AS rem_total,
+            ROUND(SUM(o.BSE), 2) AS bse_total
+        FROM open_lpp o
+        {join}
+        WHERE {' AND '.join(conditions)}
+        GROUP BY o.PSP_SPE, libelle_spe
+        ORDER BY qte_totale DESC
+        LIMIT ?
+    """
+    params.append(limit)
+    rows = con.execute(query, params).fetchall()
+    con.close()
+
+    total_qte = sum(r[2] for r in rows if r[2])
+    total_rem = sum(r[3] for r in rows if r[3])
+
+    return [
+        {
+            "code": r[0], "libelle": r[1],
+            "qte": r[2], "rem": r[3], "bse": r[4],
+            "pct_qte": round((r[2] / total_qte) * 100, 1) if total_qte else 0,
+            "pct_rem": round((r[3] / total_rem) * 100, 1) if total_rem else 0,
+        }
+        for r in rows
+    ]
+
 @app.get("/evolution-domaine")
 def get_evolution_domaine(
     domaine1: str = Query(...),

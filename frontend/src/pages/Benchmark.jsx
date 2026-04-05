@@ -75,11 +75,17 @@ function YearRangeSlider({ min, max, value, onChange }) {
         </div>
         <input type="range" min={min} max={max} value={start}
           onChange={e => { const v = +e.target.value; if (v < end) onChange([v, end]) }}
-          style={{ position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer', zIndex: 2 }}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer',
+            zIndex: start > max - (max - min) / 2 ? 5 : 3
+          }}
         />
         <input type="range" min={min} max={max} value={end}
           onChange={e => { const v = +e.target.value; if (v > start) onChange([start, v]) }}
-          style={{ position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer', zIndex: 3 }}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer',
+            zIndex: start > max - (max - min) / 2 ? 3 : 5
+          }}
         />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -138,7 +144,9 @@ export default function Benchmark() {
   const [mode, setMode]             = useState('index')
   const [showLabels, setShowLabels] = useState(false)
   const [detail, setDetail]         = useState([])
-  const [unite, setUnite]           = useState('x100k') // 'x100k' | 'x1k' | 'eur'
+  const [unite, setUnite]           = useState('x100k')
+  const [showMoyenne, setShowMoyenne] = useState(false)
+  const [moyenne, setMoyenne]       = useState(null) // 'x100k' | 'x1k' | 'eur'
 
   const UNITE_CONFIG = {
     x100k: { diviseur: 1,       label: '×100k€', suffix: '×100k€' },
@@ -216,18 +224,25 @@ export default function Benchmark() {
       if (selD2) detailParams.set('domaine2', selD2.value)
       if (selD4) detailParams.set('domaine4', selD4.value)
 
+      const moyParams = new URLSearchParams({ domaine1: selD1.value, year_start: yearRange[0], year_end: yearRange[1] })
+      if (selD2) moyParams.set('domaine2', selD2.value)
+      if (selD4) moyParams.set('domaine4', selD4.value)
+
       Promise.all([
         fetch(`/api/evolution-domaine?${params}`).then(r => r.json()),
         fetch(`/api/detail?${detailParams}`).then(r => r.json()),
-      ]).then(([evo, det]) => { setData(evo); setDetail(det); setLoading(false) })
+        fetch(`/api/moyenne-nationale?${moyParams}`).then(r => r.json()),
+      ]).then(([evo, det, moy]) => { setData(evo); setDetail(det); setMoyenne(moy); setLoading(false) })
     } else {
       detailParams.set('code_lpp', selLpp.value)
       const evoParams = new URLSearchParams({ code_lpp: selLpp.value, year_start: yearRange[0], year_end: yearRange[1] })
       selRegs.forEach(r => evoParams.append('regions', r.value))
+      const moyParams = new URLSearchParams({ code_lpp: selLpp.value, year_start: yearRange[0], year_end: yearRange[1] })
       Promise.all([
         fetch(`/api/evolution?${evoParams}`).then(r => r.json()),
         fetch(`/api/detail?${detailParams}`).then(r => r.json()),
-      ]).then(([evo, det]) => { setData(evo); setDetail(det); setLoading(false) })
+        fetch(`/api/moyenne-nationale?${moyParams}`).then(r => r.json()),
+      ]).then(([evo, det, moy]) => { setData(evo); setDetail(det); setMoyenne(moy); setLoading(false) })
     }
   }, [selLpp, selRegs, yearRange, selD1, selD2, selD4])
 
@@ -242,6 +257,11 @@ export default function Benchmark() {
         else if (mode === 'rem') point[s.region] = s.rem_x100k[i] != null ? +(s.rem_x100k[i] / diviseur).toFixed(2) : null
         else if (mode === 'yoy') point[s.region] = s.yoy_pct[i]
       })
+      if (moyenne && showMoyenne) {
+        if (mode === 'index') point['__nationale__'] = moyenne.index_base100[i]
+        else if (mode === 'rem') point['__nationale__'] = moyenne.rem_x100k[i] != null ? +(moyenne.rem_x100k[i] / diviseur).toFixed(2) : null
+        else if (mode === 'yoy') point['__nationale__'] = moyenne.yoy_pct[i]
+      }
       return point
     })
   })()
@@ -446,6 +466,14 @@ export default function Benchmark() {
                 />
                 Afficher les valeurs sur les points
               </label>
+              {moyenne && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8, cursor: 'pointer', fontSize: '0.78rem', color: '#dc2626' }}>
+                  <input type="checkbox" checked={showMoyenne} onChange={e => setShowMoyenne(e.target.checked)}
+                    style={{ accentColor: '#dc2626', cursor: 'pointer' }}
+                  />
+                  Moyenne nationale
+                </label>
+              )}
             </div>
 
             <div className="card">
@@ -455,9 +483,7 @@ export default function Benchmark() {
                 {mode === 'yoy'   && <>Évolution annuelle <span className="subtitle">en %</span></>}
               </div>
               {mode === 'index' && (
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
-                  💡 <strong>Comment lire ce graphique :</strong> si votre CA est au-dessus de la courbe marché, vous progressez plus vite que le remboursement de référence.
-                </p>
+                <></>
               )}
               <ResponsiveContainer width="100%" height={showLabels ? 400 : 360}>
                 <LineChart data={chartData} margin={{ top: showLabels ? 24 : 8, right: 24, bottom: 8, left: 8 }}>
@@ -484,6 +510,20 @@ export default function Benchmark() {
                       </Line>
                     )
                   })}
+                  {showMoyenne && moyenne && (
+                    <Line
+                      key="__nationale__"
+                      type="monotone"
+                      dataKey="__nationale__"
+                      name="Moyenne nationale"
+                      stroke="#dc2626"
+                      strokeWidth={2}
+                      strokeDasharray="6 3"
+                      dot={{ r: 3, fill: '#dc2626', strokeWidth: 0 }}
+                      activeDot={{ r: 5 }}
+                      connectNulls={false}
+                    />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             </div>
