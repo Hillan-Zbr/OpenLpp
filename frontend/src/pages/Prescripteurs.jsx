@@ -205,7 +205,7 @@ export default function Prescripteurs() {
                 value={selRegs} onChange={setSelRegs}
                 placeholder="Sélectionner une ou plusieurs régions…"
               />
-              <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} style={{ marginTop: 6, padding: '4px 12px', fontSize: '0.72rem', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+              <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} style={{ marginTop: 6, padding: '4px 12px', fontSize: '0.72rem', background: 'transparent', color: 'var(--navy)', border: '1px solid var(--navy)', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
                 🗺 France entière
               </button>
             </div>
