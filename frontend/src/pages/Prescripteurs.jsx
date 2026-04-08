@@ -65,6 +65,7 @@ export default function Prescripteurs() {
   const [data, setData]             = useState([])
   const [loading, setLoading]       = useState(false)
   const [sortBy, setSortBy]         = useState('qte')
+  const [graphMode, setGraphMode]   = useState('pct') // 'pct' | 'eur'
 
   useEffect(() => {
     fetch('/api/regions').then(r => r.json()).then(d =>
@@ -198,17 +199,15 @@ export default function Prescripteurs() {
               )}
             </div>
             <div className="form-group">
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-                <label style={{ margin: 0 }}>Région(s) <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.68rem', fontStyle: 'italic' }}>— sélection multiple</span></label>
-                <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} style={{ padding: '3px 10px', fontSize: '0.7rem', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-                  🗺 France entière
-                </button>
-              </div>
+              <label>Région(s) <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.68rem', fontStyle: 'italic' }}>— sélection multiple</span></label>
               <Select classNamePrefix="rs" isMulti
                 options={regions.filter(r => r.value !== 99)}
                 value={selRegs} onChange={setSelRegs}
                 placeholder="Sélectionner une ou plusieurs régions…"
               />
+              <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} style={{ marginTop: 6, padding: '4px 12px', fontSize: '0.72rem', background: 'transparent', color: 'var(--navy)', border: '1px solid var(--navy)', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+                🗺 France entière
+              </button>
             </div>
           </div>
 
@@ -275,9 +274,20 @@ export default function Prescripteurs() {
               <div className="card-title">
                 Spécialités prescriptrices
                 <span className="subtitle">{yearRange[0] === yearRange[1] ? yearRange[0] : `${yearRange[0]}–${yearRange[1]}`} · trié par {sortBy === 'qte' ? 'quantité' : 'remboursement'}</span>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 0, border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                  {[{ id: 'pct', label: '%' }, { id: 'eur', label: '€' }].map(m => (
+                    <button key={m.id} onClick={() => setGraphMode(m.id)} style={{
+                      padding: '4px 14px', fontSize: '0.78rem', fontWeight: 600,
+                      background: graphMode === m.id ? 'var(--navy)' : 'transparent',
+                      color: graphMode === m.id ? '#fff' : 'var(--text-secondary)',
+                      border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)',
+                      transition: 'all 0.2s',
+                    }}>{m.label}</button>
+                  ))}
+                </div>
               </div>
               <ResponsiveContainer width="100%" height={Math.max(300, sorted.length * 40)}>
-                <BarChart data={sorted} layout="vertical" margin={{ left: 8, right: 120, top: 4, bottom: 4 }}>
+                <BarChart data={sorted} layout="vertical" margin={{ left: 8, right: 130, top: 4, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                   <XAxis type="number" hide />
                   <YAxis type="category" dataKey="libelle" width={280}
@@ -302,9 +312,17 @@ export default function Prescripteurs() {
                       )
                     }}
                   />
-                  <Bar dataKey={sortBy} radius={[0, 2, 2, 0]}>
-                    <LabelList dataKey={sortBy} position="right"
-                      formatter={v => sortBy === 'qte' ? fmtNb(v) : fmtEur(v)}
+                  <Bar
+                    dataKey={graphMode === 'pct' ? (sortBy === 'qte' ? 'pct_qte' : 'pct_rem') : sortBy}
+                    radius={[0, 2, 2, 0]}
+                  >
+                    <LabelList
+                      dataKey={graphMode === 'pct' ? (sortBy === 'qte' ? 'pct_qte' : 'pct_rem') : sortBy}
+                      position="right"
+                      formatter={v => {
+                        if (graphMode === 'pct') return `${v}%`
+                        return sortBy === 'qte' ? fmtNb(v) : fmtEur(v)
+                      }}
                       style={{ fontSize: 10, fontFamily: 'var(--font-mono)', fill: 'var(--text-secondary)' }}
                     />
                     {sorted.map((d, i) => (
