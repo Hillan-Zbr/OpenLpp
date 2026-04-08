@@ -13,7 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_PATH = os.environ.get("OPENLPP_DB", r"O:\07_Projets\OpenLpp\OpenLppV2\data\opendata_LPP.db")
+DB_PATH = os.environ.get("OPENLPP_DB", r"C:\DEV\07_PROJETS\OpenLPP\OpenLppV2\data\opendata_LPP.db")
 
 def get_db():
     return duckdb.connect(DB_PATH, read_only=True)

@@ -137,17 +137,46 @@ export default function Prescripteurs() {
       <div className="page-body">
         <div className="card" style={{ marginBottom: 28 }}>
           <div className="card-title">
-            Paramètres
+            Paramètres d'analyse
             <button onClick={() => { setSelD1(null); setSelD2(null); setSelD4(null); setSelLpp(null); setSelRegs([]); setData([]) }}
-              style={{ marginLeft: 'auto', padding: '4px 12px', fontSize: '0.72rem', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+              style={{ marginLeft: 'auto', padding: '4px 12px', fontSize: '0.72rem', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.target.style.color = 'var(--navy)'; e.target.style.borderColor = 'var(--navy)' }}
+              onMouseLeave={e => { e.target.style.color = 'var(--text-muted)'; e.target.style.borderColor = 'var(--border)' }}
+            >
               ↺ Réinitialiser
             </button>
+          </div>
+
+          {/* Guide 3 étapes */}
+          <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+            {[
+              { num: '1', title: 'Choisir un périmètre', desc: 'Filtrez par domaine pour affiner la liste, ou saisissez directement un code ou mot-clé dans "Code LPP"' },
+              { num: '2', title: 'Sélectionner le code LPP', desc: 'Choisissez un code précis dans la liste, ou cliquez "Tous les codes" pour agréger tout un domaine' },
+              { num: '3', title: 'Choisir les régions', desc: 'Sélectionnez une ou plusieurs régions, ou cliquez "France entière" pour couvrir tout le territoire' },
+            ].map((s, i) => (
+              <div key={i} style={{
+                flex: 1, padding: '12px 16px',
+                background: i % 2 === 0 ? 'rgba(15,45,74,0.03)' : 'transparent',
+                borderRight: i < 2 ? '1px solid var(--border)' : 'none',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: 'var(--navy)', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.7rem', fontWeight: 700, flexShrink: 0,
+                  }}>{s.num}</div>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--navy)' }}>{s.title}</span>
+                </div>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5, paddingLeft: 28 }}>{s.desc}</p>
+              </div>
+            ))}
           </div>
 
           {/* Filtres domaines */}
           <div style={{ marginBottom: 20, padding: '16px', background: 'rgba(15,45,74,0.04)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>
-              Filtrer par domaine <span style={{ fontStyle: 'italic', textTransform: 'none', letterSpacing: 0 }}>(optionnel)</span>
+              Filtrer par domaine <span style={{ fontStyle: 'italic', textTransform: 'none', letterSpacing: 0 }}>(optionnel — affine la liste des codes LPP)</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               <div className="form-group">
