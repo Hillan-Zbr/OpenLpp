@@ -122,6 +122,10 @@ export default function Prescripteurs() {
       .then(d => { setData(d); setLoading(false) })
   }, [selLpp, selRegs, yearRange, limit, selD1, selD2, selD4])
 
+  useEffect(() => {
+    if (data.length > 0) fetchData()
+  }, [yearRange]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const sorted = [...data].sort((a, b) => b[sortBy] - a[sortBy])
   const maxQte = sorted.length ? Math.max(...sorted.map(d => d.qte)) : 1
   const maxRem = sorted.length ? Math.max(...sorted.map(d => d.rem)) : 1

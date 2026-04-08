@@ -1,5 +1,6 @@
 # Base de données
 data/
+!frontend/src/data/
 
 # Python
 __pycache__/

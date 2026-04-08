@@ -19,7 +19,6 @@ def get_db():
     return duckdb.connect(DB_PATH, read_only=True)
 
 REGIONS = {
-    5:  "Hauts-de-France",
     11: "Île-de-France",
     24: "Centre-Val de Loire",
     27: "Bourgogne-Franche-Comté",

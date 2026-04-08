@@ -1,0 +1,15 @@
+[
+  { "code": "11", "nom": "Île-de-France", "data": [ {"annee": 2020, "pop": 12271794}, {"annee": 2021, "pop": 12300000}, {"annee": 2022, "pop": 12320000}, {"annee": 2023, "pop": 12340000}, {"annee": 2024, "pop": 12419961} ] },
+  { "code": "24", "nom": "Centre-Val de Loire", "data": [ {"annee": 2020, "pop": 2574863}, {"annee": 2021, "pop": 2575000}, {"annee": 2022, "pop": 2576000}, {"annee": 2023, "pop": 2576000}, {"annee": 2024, "pop": 2573295} ] },
+  { "code": "27", "nom": "Bourgogne-Franche-Comté", "data": [ {"annee": 2020, "pop": 2801695}, {"annee": 2021, "pop": 2798000}, {"annee": 2022, "pop": 2795000}, {"annee": 2023, "pop": 2792000}, {"annee": 2024, "pop": 2785393} ] },
+  { "code": "28", "nom": "Normandie", "data": [ {"annee": 2020, "pop": 3325522}, {"annee": 2021, "pop": 3325000}, {"annee": 2022, "pop": 3325000}, {"annee": 2023, "pop": 3325000}, {"annee": 2024, "pop": 3315233} ] },
+  { "code": "32", "nom": "Hauts-de-France", "data": [ {"annee": 2020, "pop": 5997734}, {"annee": 2021, "pop": 5995000}, {"annee": 2022, "pop": 5992000}, {"annee": 2023, "pop": 5989000}, {"annee": 2024, "pop": 5983230} ] },
+  { "code": "44", "nom": "Grand Est", "data": [ {"annee": 2020, "pop": 5562651}, {"annee": 2021, "pop": 5560000}, {"annee": 2022, "pop": 5558000}, {"annee": 2023, "pop": 5556000}, {"annee": 2024, "pop": 5548098} ] },
+  { "code": "52", "nom": "Pays de la Loire", "data": [ {"annee": 2020, "pop": 3832120}, {"annee": 2021, "pop": 3855000}, {"annee": 2022, "pop": 3878000}, {"annee": 2023, "pop": 3901000}, {"annee": 2024, "pop": 3907423} ] },
+  { "code": "53", "nom": "Bretagne", "data": [ {"annee": 2020, "pop": 3373835}, {"annee": 2021, "pop": 3395000}, {"annee": 2022, "pop": 3417000}, {"annee": 2023, "pop": 3439000}, {"annee": 2024, "pop": 3453023} ] },
+  { "code": "75", "nom": "Nouvelle-Aquitaine", "data": [ {"annee": 2020, "pop": 6033952}, {"annee": 2021, "pop": 6065000}, {"annee": 2022, "pop": 6097000}, {"annee": 2023, "pop": 6128000}, {"annee": 2024, "pop": 6154772} ] },
+  { "code": "76", "nom": "Occitanie", "data": [ {"annee": 2020, "pop": 5973969}, {"annee": 2021, "pop": 6020000}, {"annee": 2022, "pop": 6066000}, {"annee": 2023, "pop": 6113000}, {"annee": 2024, "pop": 6154483} ] },
+  { "code": "84", "nom": "Auvergne-Rhône-Alpes", "data": [ {"annee": 2020, "pop": 8078652}, {"annee": 2021, "pop": 8115000}, {"annee": 2022, "pop": 8152000}, {"annee": 2023, "pop": 8189000}, {"annee": 2024, "pop": 8231423} ] },
+  { "code": "93", "nom": "Provence-Alpes-Côte d'Azur", "data": [ {"annee": 2020, "pop": 5098666}, {"annee": 2021, "pop": 5125000}, {"annee": 2022, "pop": 5152000}, {"annee": 2023, "pop": 5178000}, {"annee": 2024, "pop": 5198011} ] },
+  { "code": "94", "nom": "Corse", "data": [ {"annee": 2020, "pop": 343701}, {"annee": 2021, "pop": 347000}, {"annee": 2022, "pop": 350000}, {"annee": 2023, "pop": 353000}, {"annee": 2024, "pop": 355528} ] }
+]
