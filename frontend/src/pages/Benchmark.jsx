@@ -231,7 +231,7 @@ export default function Benchmark() {
       Promise.all([
         fetch(`/api/evolution-domaine?${params}`).then(r => r.json()),
         fetch(`/api/detail?${detailParams}`).then(r => r.json()),
-        fetch(`/api/moyenne-nationale?${moyParams}`).then(r => r.json()),
+        fetch(`/api/moyenne-nationale?${moyParams}`).then(r => r.ok ? r.json() : null),
       ]).then(([evo, det, moy]) => { setData(evo); setDetail(det); setMoyenne(moy); setLoading(false) })
     } else {
       detailParams.set('code_lpp', selLpp.value)
@@ -241,7 +241,7 @@ export default function Benchmark() {
       Promise.all([
         fetch(`/api/evolution?${evoParams}`).then(r => r.json()),
         fetch(`/api/detail?${detailParams}`).then(r => r.json()),
-        fetch(`/api/moyenne-nationale?${moyParams}`).then(r => r.json()),
+        fetch(`/api/moyenne-nationale?${moyParams}`).then(r => r.ok ? r.json() : null),
       ]).then(([evo, det, moy]) => { setData(evo); setDetail(det); setMoyenne(moy); setLoading(false) })
     }
   }, [selLpp, selRegs, yearRange, selD1, selD2, selD4])
@@ -257,10 +257,10 @@ export default function Benchmark() {
         else if (mode === 'rem') point[s.region] = s.rem_x100k[i] != null ? +(s.rem_x100k[i] / diviseur).toFixed(2) : null
         else if (mode === 'yoy') point[s.region] = s.yoy_pct[i]
       })
-      if (moyenne && showMoyenne) {
-        if (mode === 'index') point['__nationale__'] = moyenne.index_base100[i]
+      if (moyenne && showMoyenne && moyenne.rem_x100k) {
+        if (mode === 'index') point['__nationale__'] = moyenne.index_base100?.[i] ?? null
         else if (mode === 'rem') point['__nationale__'] = moyenne.rem_x100k[i] != null ? +(moyenne.rem_x100k[i] / diviseur).toFixed(2) : null
-        else if (mode === 'yoy') point['__nationale__'] = moyenne.yoy_pct[i]
+        else if (mode === 'yoy') point['__nationale__'] = moyenne.yoy_pct?.[i] ?? null
       }
       return point
     })
