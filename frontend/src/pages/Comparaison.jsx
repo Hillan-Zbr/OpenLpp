@@ -23,14 +23,14 @@ const BEN_TO_JV = {
   75: ['FR-16','FR-17','FR-19','FR-23','FR-24','FR-33','FR-40','FR-47','FR-64','FR-79','FR-86','FR-87'], // Nouvelle-Aquitaine
   76: ['FR-09','FR-11','FR-12','FR-30','FR-31','FR-32','FR-34','FR-46','FR-48','FR-65','FR-66','FR-81','FR-82'], // Occitanie
   84: ['FR-01','FR-03','FR-07','FR-15','FR-26','FR-38','FR-42','FR-43','FR-63','FR-69','FR-73','FR-74'], // Auvergne-Rhône-Alpes
-  93: ['FR-04','FR-05','FR-06','FR-13','FR-20','FR-83','FR-84'], // PACA + Corse
+  93: ['FR-04','FR-05','FR-06','FR-13','FR-2A','FR-2B','FR-83','FR-84'], // PACA + Corse
 }
 
 const REG_LABELS = {
   11: 'Île-de-France', 24: 'Centre-Val de Loire', 27: 'Bourgogne-Franche-Comté',
-  28: 'Normandie', 32: 'Hauts-de-France', 44: 'Grand Est',
+  28: 'Normandie', 32: 'Hauts-de-France (Nord)', 44: 'Grand Est',
   52: 'Pays de la Loire', 53: 'Bretagne', 75: 'Nouvelle-Aquitaine',
-  76: 'Occitanie', 84: 'Auvergne-Rhône-Alpes', 93: 'PACA',
+  76: 'Occitanie', 84: 'Auvergne-Rhône-Alpes', 93: "Provence-Alpes-Côte d'Azur",
 }
 
 const fmtEur = (v) => v == null ? '—' : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v)
@@ -47,6 +47,7 @@ export default function Comparaison() {
   const [selD1, setSelD1]           = useState(null)
   const [selD2, setSelD2]           = useState(null)
   const [selD4, setSelD4]           = useState(null)
+  const [topN, setTopN]             = useState(null)
   const mapRef = useRef(null)
 
   useEffect(() => {
@@ -120,22 +121,27 @@ export default function Comparaison() {
     }
   }, [selLpp, year, selD1, selD2, selD4])
 
-  const total = data.reduce((s, d) => s + d.rem_eur, 0)
-  const maxVal = data.length ? Math.max(...data.map(d => d.rem_eur)) : 1
+  const displayData = topN ? data.slice(0, topN) : data
+
+  const total = displayData.reduce((s, d) => s + d.rem_eur, 0)
+  const maxVal = displayData.length ? Math.max(...displayData.map(d => d.rem_eur)) : 1
   const sqrtMax = Math.sqrt(maxVal)
 
-  // Données pour la carte — on utilise la racine carrée pour mieux visualiser les écarts
+  // Carte : coloriage par rang pour maximiser le contraste visuel
+  // Rang 0 (1ère région) → valeur 1.0 (couleur max), dernier rang → valeur proche de 0
   const mapValues = {}
-  data.forEach(d => {
+  const n = displayData.length
+  displayData.forEach((d, i) => {
     const depts = BEN_TO_JV[d.ben_reg]
     if (depts) {
-      depts.forEach(code => { mapValues[code] = Math.sqrt(d.rem_eur) })
+      const rankValue = n > 1 ? 1 - (i / (n - 1)) : 1
+      depts.forEach(code => { mapValues[code] = rankValue })
     }
   })
 
   // Tooltip carte
   const handleRegionTipShow = (e, el, code) => {
-    const entry = data.find(d => BEN_TO_JV[d.ben_reg]?.includes(code))
+    const entry = displayData.find(d => BEN_TO_JV[d.ben_reg]?.includes(code))
     if (entry) {
       el.html(`<b>${entry.region}</b><br/>${fmtEur(entry.rem_eur)}`)
     }
@@ -330,10 +336,10 @@ export default function Comparaison() {
                 series={data.length > 0 ? {
                   regions: [{
                     values: mapValues,
-                    scale: ['#fde8c8', '#c9822a', '#0f2d4a'],
+                    scale: ['#d4e8f5', '#c9822a', '#0f2d4a'],
                     normalizeFunction: 'linear',
                     min: 0,
-                    max: sqrtMax,
+                    max: 1,
                   }]
                 } : undefined}
                 onRegionTipShow={handleRegionTipShow}
@@ -341,7 +347,7 @@ export default function Comparaison() {
             </div>
 
             {/* Légende + top régions */}
-            {data.length > 0 && (
+            {displayData.length > 0 && (
               <div>
                 {/* Gradient légende */}
                 <div style={{ marginBottom: 20 }}>
@@ -355,7 +361,7 @@ export default function Comparaison() {
 
                 {/* Top régions */}
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 8, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Classement</div>
-                {data.slice(0, 6).map((d, i) => {
+                {displayData.slice(0, 6).map((d, i) => {
                   // Calculer la couleur interpolée selon la valeur sqrt
                   const ratio = sqrtMax > 0 ? Math.sqrt(d.rem_eur) / sqrtMax : 0
                   // Interpolation : #fde8c8 → #c9822a → #0f2d4a
@@ -393,8 +399,8 @@ export default function Comparaison() {
                     </div>
                   )
                 })}
-                {data.length > 6 && (
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>+ {data.length - 6} autres régions</div>
+                {displayData.length > 6 && (
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>+ {displayData.length - 6} autres régions</div>
                 )}
               </div>
             )}
@@ -404,13 +410,32 @@ export default function Comparaison() {
         {/* Graphique barres + tableau */}
         {!loading && data.length > 0 && (
           <div className="fade-in">
+            {/* Toggle Top N */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: 4 }}>Afficher :</span>
+              {[{ id: 5, label: 'Top 5' }, { id: 10, label: 'Top 10' }, { id: null, label: 'Toutes' }].map(opt => (
+                <button key={String(opt.id)} onClick={() => setTopN(opt.id)} style={{
+                  padding: '5px 14px',
+                  border: `1px solid ${topN === opt.id ? 'var(--navy)' : 'var(--border)'}`,
+                  background: topN === opt.id ? 'var(--navy)' : 'transparent',
+                  color: topN === opt.id ? '#fff' : 'var(--text-secondary)',
+                  borderRadius: 'var(--radius)', cursor: 'pointer', fontSize: '0.78rem',
+                  fontFamily: 'var(--font-body)', transition: 'all 0.2s',
+                }}>{opt.label}</button>
+              ))}
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 4 }}>
+                {displayData.length} région{displayData.length > 1 ? 's' : ''} affichée{displayData.length > 1 ? 's' : ''}
+                {topN && data.length > topN ? ` sur ${data.length}` : ''}
+              </span>
+            </div>
+
             <div className="card" style={{ marginBottom: 24 }}>
               <div className="card-title">
                 Remboursements par région
                 <span className="subtitle">{year} · montant brut €</span>
               </div>
-              <ResponsiveContainer width="100%" height={420}>
-                <BarChart data={data} layout="vertical" margin={{ left: 8, right: 80, top: 4, bottom: 4 }}>
+              <ResponsiveContainer width="100%" height={Math.max(200, displayData.length * 38)} >
+                <BarChart data={displayData} layout="vertical" margin={{ left: 8, right: 80, top: 4, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                   <XAxis type="number" tickFormatter={v => fmtEur(v)} style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }} />
                   <YAxis type="category" dataKey="region" width={200} style={{ fontFamily: 'var(--font-body)', fontSize: 11 }} />
@@ -423,7 +448,7 @@ export default function Comparaison() {
                       formatter={v => fmtEur(v)}
                       style={{ fontSize: 10, fontFamily: 'var(--font-mono)', fill: 'var(--text-secondary)' }}
                     />
-                    {data.map((d) => {
+                    {displayData.map((d) => {
                       const ratio = sqrtMax > 0 ? Math.sqrt(d.rem_eur) / sqrtMax : 0
                       let r, g, b
                       if (ratio < 0.5) {
@@ -460,7 +485,7 @@ export default function Comparaison() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.map((d, i) => {
+                  {displayData.map((d, i) => {
                     const pct = total > 0 ? ((d.rem_eur / total) * 100).toFixed(1) : 0
                     const barWidth = maxVal > 0 ? (d.rem_eur / maxVal) * 100 : 0
                     const ratio = sqrtMax > 0 ? Math.sqrt(d.rem_eur) / sqrtMax : 0
