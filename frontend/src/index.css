@@ -444,7 +444,7 @@ body::before {
 .rs__control:hover { border-color: var(--border-strong) !important; }
 .rs__control--is-focused { border-color: var(--navy) !important; }
 .rs__menu { border-radius: var(--radius) !important; border: 1px solid var(--border) !important; }
-.rs__option { font-size: 0.85rem !important; }
+.rs__option { font-size: 0.85rem !important; white-space: normal !important; word-break: break-word !important; }
 .rs__option--is-focused { background: rgba(15,45,74,0.06) !important; }
 .rs__option--is-selected { background: var(--navy) !important; }
 .rs__multi-value { background: rgba(15,45,74,0.08) !important; border-radius: 2px !important; }

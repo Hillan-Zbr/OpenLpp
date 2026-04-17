@@ -8,6 +8,16 @@ Outil de benchmarking des remboursements LPP (données AMELI 2020–2024).
 - Node.js 18+
 - La base DuckDB : `O:\07_Projets\OpenLpp\OpenLppV2\data\opendata_LPP.db`
 
+## Variables d'environnement
+
+Un fichier `.env.example` est fourni a la racine du projet.
+
+1. Copier le fichier :
+```bash
+cp .env.example .env
+```
+2. Adapter la variable `OPENLPP_DB` selon ton environnement.
+
 ## Lancement
 
 ### Terminal 1 — Backend

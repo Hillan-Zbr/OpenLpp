@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import Select from 'react-select'
+import { rsComponents } from '../selectComponents.jsx'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, CartesianGrid, LabelList
@@ -46,6 +47,8 @@ const ALL_METRO_REGIONS = [
 const fmtEur = (v) => v == null ? '—' : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v)
 const fmtNb  = (v) => v == null ? '—' : new Intl.NumberFormat('fr-FR').format(v)
 
+const truncLabel = (s, n = 48) => s && s.length > n ? s.substring(0, n) + '…' : s
+
 const COLORS_QTE = ['#0f2d4a','#1a4a73','#2a6da8','#3a8ed4','#5aaee8','#8acced','#b8e0f5','#d8eef9','#eef6fc','#f8fbfe']
 const COLORS_REM = ['#7c2d12','#c9822a','#d97706','#f59e0b','#fbbf24','#fcd34d','#fde68a','#fef3c7','#fffbeb','#fffff0']
 
@@ -65,21 +68,26 @@ export default function Prescripteurs() {
   const [data, setData]             = useState([])
   const [loading, setLoading]       = useState(false)
   const [sortBy, setSortBy]         = useState('qte')
-  const [graphMode, setGraphMode]   = useState('pct') // 'pct' | 'eur'
+  const [source, setSource]         = useState('ref')
+  const [hasQueried, setHasQueried] = useState(false)
+
+  const domLabel1 = source === 'orig' ? 'Titre (L_titre)' : 'Domaine 1'
+  const domLabel2 = source === 'orig' ? 'Sous-classe 1 (L_SC1)' : 'Domaine 2'
+  const domLabel4 = source === 'orig' ? 'Sous-classe 2 (L_SC2)' : 'Domaine 4'
 
   useEffect(() => {
     fetch('/api/regions').then(r => r.json()).then(d =>
       setRegions(d.map(r => ({ value: r.code, label: r.label })))
     )
-    fetch('/api/domaines').then(r => r.json()).then(setDomaines)
-  }, [])
+    fetch(`/api/domaines?source=${source}`).then(r => r.json()).then(setDomaines)
+  }, [source])
 
   const d2Options = selD1
-    ? (domaines.find(d => d.label === selD1.value)?.children || []).map(c => ({ value: c.label, label: c.label }))
+    ? (domaines.find(d => d.label === selD1.value)?.children || []).map(c => ({ value: c.label, label: truncLabel(c.label) }))
     : []
   const d4Options = selD1 && selD2
     ? (domaines.find(d => d.label === selD1.value)?.children.find(c => c.label === selD2.value)?.domaine4 || [])
-        .filter(Boolean).map(d => ({ value: d, label: d }))
+        .filter(Boolean).map(d => ({ value: d, label: truncLabel(d) }))
     : []
 
   useEffect(() => {
@@ -89,6 +97,7 @@ export default function Prescripteurs() {
       params.set('domaine1', selD1.value)
       if (selD2) params.set('domaine2', selD2.value)
       if (selD4) params.set('domaine4', selD4.value)
+      params.set('source', source)
       fetch(`/api/codes-lpp-domaine?${params}`)
         .then(r => r.json())
         .then(d => { setLppOptions(d.map(x => ({ value: x.code, label: x.label }))); setLppLoading(false) })
@@ -101,11 +110,12 @@ export default function Prescripteurs() {
       }, 300)
       return () => clearTimeout(t)
     }
-  }, [lppQuery, selD1, selD2, selD4])
+  }, [lppQuery, selD1, selD2, selD4, source])
 
   const fetchData = useCallback(() => {
     if (!selLpp || selRegs.length === 0) return
     setLoading(true)
+    setHasQueried(true)
     const params = new URLSearchParams({ year_start: yearRange[0], year_end: yearRange[1], limit })
     selRegs.forEach(r => params.append('regions', r.value))
 
@@ -118,13 +128,13 @@ export default function Prescripteurs() {
     }
 
     fetch(`/api/prescripteurs?${params}`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false) })
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then(d => { setData(Array.isArray(d) ? d : []); setLoading(false) })
+      .catch(err => { console.error('Erreur API prescripteurs:', err); setData([]); setLoading(false) })
   }, [selLpp, selRegs, yearRange, limit, selD1, selD2, selD4])
-
-  useEffect(() => {
-    if (data.length > 0) fetchData()
-  }, [yearRange]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sorted = [...data].sort((a, b) => b[sortBy] - a[sortBy])
   const maxQte = sorted.length ? Math.max(...sorted.map(d => d.qte)) : 1
@@ -141,71 +151,69 @@ export default function Prescripteurs() {
       <div className="page-body">
         <div className="card" style={{ marginBottom: 28 }}>
           <div className="card-title">
-            Paramètres d'analyse
-            <button onClick={() => { setSelD1(null); setSelD2(null); setSelD4(null); setSelLpp(null); setSelRegs([]); setData([]) }}
-              style={{ marginLeft: 'auto', padding: '4px 12px', fontSize: '0.72rem', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.target.style.color = 'var(--navy)'; e.target.style.borderColor = 'var(--navy)' }}
-              onMouseLeave={e => { e.target.style.color = 'var(--text-muted)'; e.target.style.borderColor = 'var(--border)' }}
-            >
+            Paramètres
+            <button onClick={() => { setSelD1(null); setSelD2(null); setSelD4(null); setSelLpp(null); setSelRegs([]); setData([]); setHasQueried(false) }}
+              style={{ marginLeft: 'auto', padding: '4px 12px', fontSize: '0.72rem', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
               ↺ Réinitialiser
             </button>
           </div>
 
-          {/* Guide 3 étapes */}
-          <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-            {[
-              { num: '1', title: 'Choisir un périmètre', desc: 'Filtrez par domaine pour affiner la liste, ou saisissez directement un code ou mot-clé dans "Code LPP"' },
-              { num: '2', title: 'Sélectionner le code LPP', desc: 'Choisissez un code précis dans la liste, ou cliquez "Tous les codes" pour agréger tout un domaine' },
-              { num: '3', title: 'Choisir les régions', desc: 'Sélectionnez une ou plusieurs régions, ou cliquez "France entière" pour couvrir tout le territoire' },
-            ].map((s, i) => (
-              <div key={i} style={{
-                flex: 1, padding: '12px 16px',
-                background: i % 2 === 0 ? 'rgba(15,45,74,0.03)' : 'transparent',
-                borderRight: i < 2 ? '1px solid var(--border)' : 'none',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <div style={{
-                    width: 20, height: 20, borderRadius: '50%',
-                    background: 'var(--navy)', color: '#fff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.7rem', fontWeight: 700, flexShrink: 0,
-                  }}>{s.num}</div>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--navy)' }}>{s.title}</span>
-                </div>
-                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5, paddingLeft: 28 }}>{s.desc}</p>
-              </div>
-            ))}
+          {/* Toggle Classification */}
+          <div style={{ marginBottom: 20, display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Classification :</span>
+            <button onClick={() => { setSource('ref'); setSelD1(null); setSelD2(null); setSelD4(null); setSelLpp(null) }} style={{
+              padding: '6px 14px',
+              border: `1px solid ${source === 'ref' ? 'var(--navy)' : 'var(--border)'}`,
+              background: source === 'ref' ? 'var(--navy)' : 'transparent',
+              color: source === 'ref' ? '#fff' : 'var(--text-secondary)',
+              borderRadius: 'var(--radius)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+              fontSize: '0.82rem',
+              transition: 'all 0.2s',
+            }}>📋 Référence</button>
+            <button onClick={() => { setSource('orig'); setSelD1(null); setSelD2(null); setSelD4(null); setSelLpp(null) }} style={{
+              padding: '6px 14px',
+              border: `1px solid ${source === 'orig' ? 'var(--navy)' : 'var(--border)'}`,
+              background: source === 'orig' ? 'var(--navy)' : 'transparent',
+              color: source === 'orig' ? '#fff' : 'var(--text-secondary)',
+              borderRadius: 'var(--radius)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+              fontSize: '0.82rem',
+              transition: 'all 0.2s',
+            }}>📊 Originale</button>
           </div>
 
           {/* Filtres domaines */}
           <div style={{ marginBottom: 20, padding: '16px', background: 'rgba(15,45,74,0.04)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>
-              Filtrer par domaine <span style={{ fontStyle: 'italic', textTransform: 'none', letterSpacing: 0 }}>(optionnel — affine la liste des codes LPP)</span>
+              Filtrer par domaine <span style={{ fontStyle: 'italic', textTransform: 'none', letterSpacing: 0 }}>(optionnel)</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               <div className="form-group">
-                <label>Domaine 1</label>
-                <Select classNamePrefix="rs" isClearable
-                  options={domaines.map(d => ({ value: d.label, label: d.label }))}
+                <label>{domLabel1}</label>
+                <Select classNamePrefix="rs" components={rsComponents} isClearable
+                  options={domaines.map(d => ({ value: d.label, label: truncLabel(d.label) }))}
                   value={selD1}
                   onChange={v => { setSelD1(v); setSelD2(null); setSelD4(null); setSelLpp(null) }}
-                  placeholder="Tous les domaines…"
+                  placeholder="Tous…"
                 />
               </div>
               <div className="form-group">
-                <label>Domaine 2</label>
-                <Select classNamePrefix="rs" isClearable options={d2Options} value={selD2}
+                <label>{domLabel2}</label>
+                <Select classNamePrefix="rs" components={rsComponents} isClearable options={d2Options} value={selD2}
                   isDisabled={!selD1}
                   onChange={v => { setSelD2(v); setSelD4(null); setSelLpp(null) }}
-                  placeholder={selD1 ? 'Tous…' : "— choisir D1 d'abord"}
+                  placeholder={selD1 ? 'Tous…' : `— choisir ${domLabel1} d'abord`}
                 />
               </div>
               <div className="form-group">
-                <label>Domaine 4</label>
-                <Select classNamePrefix="rs" isClearable options={d4Options} value={selD4}
+                <label>{domLabel4}</label>
+                <Select classNamePrefix="rs" components={rsComponents} isClearable options={d4Options} value={selD4}
                   isDisabled={!selD2}
                   onChange={v => { setSelD4(v); setSelLpp(null) }}
-                  placeholder={selD2 ? 'Tous…' : "— choisir D2 d'abord"}
+                  placeholder={selD2 ? 'Tous…' : `— choisir ${domLabel2} d'abord`}
                 />
               </div>
             </div>
@@ -214,7 +222,7 @@ export default function Prescripteurs() {
           <div className="form-grid">
             <div className="form-group">
               <label>Code LPP <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.68rem', fontStyle: 'italic' }}>— saisissez un code ou mot-clé</span></label>
-              <Select classNamePrefix="rs" options={lppOptions} value={selLpp} onChange={setSelLpp}
+              <Select classNamePrefix="rs" components={rsComponents} options={lppOptions} value={selLpp} onChange={setSelLpp}
                 onInputChange={setLppQuery} isLoading={lppLoading}
                 placeholder="Ex : 1149511 ou PPC ou APNEE…"
                 noOptionsMessage={() => lppQuery.length < 2 ? 'Saisissez au moins 2 caractères' : 'Aucun résultat'}
@@ -232,15 +240,17 @@ export default function Prescripteurs() {
               )}
             </div>
             <div className="form-group">
-              <label>Région(s) <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.68rem', fontStyle: 'italic' }}>— sélection multiple</span></label>
-              <Select classNamePrefix="rs" isMulti
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                <label style={{ margin: 0 }}>Région(s) <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.68rem', fontStyle: 'italic' }}>— sélection multiple</span></label>
+                <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} style={{ padding: '3px 10px', fontSize: '0.7rem', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+                  🗺 France entière
+                </button>
+              </div>
+              <Select classNamePrefix="rs" components={rsComponents} isMulti
                 options={regions.filter(r => r.value !== 99)}
                 value={selRegs} onChange={setSelRegs}
                 placeholder="Sélectionner une ou plusieurs régions…"
               />
-              <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} style={{ marginTop: 6, padding: '4px 12px', fontSize: '0.72rem', background: 'transparent', color: 'var(--navy)', border: '1px solid var(--navy)', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-                🗺 France entière
-              </button>
             </div>
           </div>
 
@@ -307,20 +317,9 @@ export default function Prescripteurs() {
               <div className="card-title">
                 Spécialités prescriptrices
                 <span className="subtitle">{yearRange[0] === yearRange[1] ? yearRange[0] : `${yearRange[0]}–${yearRange[1]}`} · trié par {sortBy === 'qte' ? 'quantité' : 'remboursement'}</span>
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: 0, border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                  {[{ id: 'pct', label: '%' }, { id: 'eur', label: '€' }].map(m => (
-                    <button key={m.id} onClick={() => setGraphMode(m.id)} style={{
-                      padding: '4px 14px', fontSize: '0.78rem', fontWeight: 600,
-                      background: graphMode === m.id ? 'var(--navy)' : 'transparent',
-                      color: graphMode === m.id ? '#fff' : 'var(--text-secondary)',
-                      border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)',
-                      transition: 'all 0.2s',
-                    }}>{m.label}</button>
-                  ))}
-                </div>
               </div>
               <ResponsiveContainer width="100%" height={Math.max(300, sorted.length * 40)}>
-                <BarChart data={sorted} layout="vertical" margin={{ left: 8, right: 130, top: 4, bottom: 4 }}>
+                <BarChart data={sorted} layout="vertical" margin={{ left: 8, right: 120, top: 4, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                   <XAxis type="number" hide />
                   <YAxis type="category" dataKey="libelle" width={280}
@@ -345,17 +344,9 @@ export default function Prescripteurs() {
                       )
                     }}
                   />
-                  <Bar
-                    dataKey={graphMode === 'pct' ? (sortBy === 'qte' ? 'pct_qte' : 'pct_rem') : sortBy}
-                    radius={[0, 2, 2, 0]}
-                  >
-                    <LabelList
-                      dataKey={graphMode === 'pct' ? (sortBy === 'qte' ? 'pct_qte' : 'pct_rem') : sortBy}
-                      position="right"
-                      formatter={v => {
-                        if (graphMode === 'pct') return `${v}%`
-                        return sortBy === 'qte' ? fmtNb(v) : fmtEur(v)
-                      }}
+                  <Bar dataKey={sortBy} radius={[0, 2, 2, 0]}>
+                    <LabelList dataKey={sortBy} position="right"
+                      formatter={v => sortBy === 'qte' ? fmtNb(v) : fmtEur(v)}
                       style={{ fontSize: 10, fontFamily: 'var(--font-mono)', fill: 'var(--text-secondary)' }}
                     />
                     {sorted.map((d, i) => (
@@ -420,7 +411,10 @@ export default function Prescripteurs() {
           </div>
         )}
 
-        {!loading && !data.length && canQuery && (
+        {!loading && !data.length && hasQueried && (
+          <div className="empty-state"><div className="icon">◐</div><p>Aucun prescripteur trouvé pour cette recherche. Essayez de modifier les filtres.</p></div>
+        )}
+        {!loading && !data.length && !hasQueried && canQuery && (
           <div className="empty-state"><div className="icon">◐</div><p>Cliquez sur "Analyser les prescripteurs" pour afficher les résultats.</p></div>
         )}
         {!loading && !data.length && !canQuery && (

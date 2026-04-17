@@ -1,7 +1,7 @@
 @echo off
 echo Demarrage OpenLPP...
 
-start "OpenLPP Backend" cmd /k "cd /d C:\DEV\07_PROJETS\OpenLPP\OpenLppV2\backend && python -m uvicorn main:app --reload --port 8000"
+start "OpenLPP Backend" cmd /k "cd /d C:\DEV\07_PROJETS\OpenLPP\OpenLppV2\backend && set OPENLPP_DB=C:\DEV\07_PROJETS\OpenLPP\OpenLppV2\data\opendata_LPP.db && python -m uvicorn main:app --reload --port 8000"
 
 timeout /t 2 /nobreak >nul
 
