@@ -13,23 +13,24 @@ export default function Dashboard() {
   const [tops, setTops]     = useState([])
   const [evol, setEvol]     = useState([])
   const [loading, setLoading] = useState(true)
+  const [source, setSource] = useState('ref')
 
   useEffect(() => {
     // Chargement unique de l'évolution nationale (toutes années)
-    fetch('/api/evolution-nationale').then(r => r.json()).then(setEvol)
-  }, [])
+    fetch(`/api/evolution-nationale?source=${source}`).then(r => r.json()).then(setEvol)
+  }, [source])
 
   useEffect(() => {
     setLoading(true)
     Promise.all([
-      fetch(`/api/kpi-national?year=${year}`).then(r => r.json()),
-      fetch(`/api/top-codes?year=${year}&limit=10`).then(r => r.json()),
+      fetch(`/api/kpi-national?year=${year}&source=${source}`).then(r => r.json()),
+      fetch(`/api/top-codes?year=${year}&limit=10&source=${source}`).then(r => r.json()),
     ]).then(([k, t]) => {
       setKpi(k)
       setTops(t)
       setLoading(false)
     })
-  }, [year])
+  }, [year, source])
 
   return (
     <div className="fade-up">
@@ -55,6 +56,33 @@ export default function Dashboard() {
               transition: 'all 0.2s',
             }}>{y}</button>
           ))}
+        </div>
+
+        {/* Classification source toggle */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 28, alignItems: 'center' }}>
+          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Classification :</span>
+          <button onClick={() => setSource('ref')} style={{
+            padding: '6px 14px',
+            border: `1px solid ${source === 'ref' ? 'var(--navy)' : 'var(--border)'}`,
+            background: source === 'ref' ? 'var(--navy)' : 'transparent',
+            color: source === 'ref' ? '#fff' : 'var(--text-secondary)',
+            borderRadius: 'var(--radius)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-body)',
+            fontSize: '0.82rem',
+            transition: 'all 0.2s',
+          }}>📋 Référence</button>
+          <button onClick={() => setSource('orig')} style={{
+            padding: '6px 14px',
+            border: `1px solid ${source === 'orig' ? 'var(--navy)' : 'var(--border)'}`,
+            background: source === 'orig' ? 'var(--navy)' : 'transparent',
+            color: source === 'orig' ? '#fff' : 'var(--text-secondary)',
+            borderRadius: 'var(--radius)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-body)',
+            fontSize: '0.82rem',
+            transition: 'all 0.2s',
+          }}>📊 Originale</button>
         </div>
 
         {loading ? (
