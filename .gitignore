@@ -13,3 +13,5 @@ dist/
 
 # Divers
 *.wal".claude/" 
+
+.claude/

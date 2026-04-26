@@ -1,11 +1,133 @@
 import { useState, useEffect } from 'react'
+import * as XLSX from 'xlsx'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line, CartesianGrid, ReferenceDot } from 'recharts'
+
+const styles = `
+  .dashboard-hifi {
+    --nav: #102e4b;
+    --nav-2: #0b2238;
+    --nav-hi: #1a4368;
+    --nav-ink: #dbe6f1;
+    --nav-muted: #7c98b3;
+    --paper: #f5f2ed;
+    --paper-2: #ffffff;
+    --ink: #1b2230;
+    --ink-2: #3b4657;
+    --muted: #7a8498;
+    --line: #e1dcd2;
+    --line-2: #ebe7dd;
+    --card: #ffffff;
+    --accent: #c9822a;
+    --accent-2: #a86a1f;
+    --accent-soft: #f7e9d1;
+    --accent-softer: #fbf3e4;
+    --ok: #3f7d4a;
+    --ok-soft: #e2efdf;
+    --focus-ring: 0 0 0 3px rgba(201,130,42,.22);
+    --shadow-sm: 0 1px 2px rgba(16,46,75,.06);
+    --shadow-md: 0 1px 2px rgba(16,46,75,.06), 0 8px 20px -12px rgba(16,46,75,.18);
+    padding: 0 32px;
+  }
+
+  .dashboard-hifi .page-head { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
+  .dashboard-hifi .page-head .eyebrow { font-size: 11px; letter-spacing: .18em; color: var(--accent-2); text-transform: uppercase; font-weight: 600; }
+  .dashboard-hifi .page-head h1 { margin: 4px 0 4px; font-size: 24px; font-weight: 700; letter-spacing: -.3px; line-height: 1.15; }
+  .dashboard-hifi .page-head p { margin: 0; color: var(--ink-2); font-size: 13.5px; max-width: 720px; }
+
+  .dashboard-hifi .controls { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+  .dashboard-hifi .controls-group { display: flex; gap: 8px; align-items: center; }
+  .dashboard-hifi .controls-label { font-size: 11.5px; font-weight: 600; color: var(--ink-2); letter-spacing: .02em; text-transform: uppercase; }
+  .dashboard-hifi .controls-buttons { display: flex; gap: 6px; }
+
+  .dashboard-hifi .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .dashboard-hifi .btn:hover {
+    background: var(--accent-softer); border-color: var(--accent); color: var(--accent-2);
+  }
+
+  .dashboard-hifi .btn.active {
+    background: linear-gradient(180deg,var(--accent),var(--accent-2));
+    color: #fff; border-color: var(--accent-2);
+  }
+
+  .dashboard-hifi .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px;
+  }
+
+  .dashboard-hifi .kpi-card {
+    background: linear-gradient(135deg, #fffaf1, #fbf3e4);
+    border: 1px solid var(--accent); border-radius: 12px;
+    padding: 20px; box-shadow: 0 0 0 1px rgba(201,130,42,.1);
+  }
+
+  .dashboard-hifi .kpi-card .label {
+    font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-2); font-weight: 600; margin-bottom: 8px;
+  }
+
+  .dashboard-hifi .kpi-card .value {
+    font-size: 2.2rem; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; margin-bottom: 4px; font-family: 'DM Mono', monospace;
+  }
+
+  .dashboard-hifi .kpi-card .unit {
+    font-size: 12px; color: var(--muted); line-height: 1.4;
+  }
+
+  .dashboard-hifi .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+
+  .dashboard-hifi .card .title {
+    font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px;
+  }
+
+  .dashboard-hifi .card .subtitle {
+    font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px;
+  }
+
+  @media (max-width: 1100px) {
+    .dashboard-hifi .kpi-grid { grid-template-columns: 1fr; }
+  }
+`
 
 const YEARS = [2020, 2021, 2022, 2023, 2024]
 const COLORS = ['#0f2d4a','#1a4a73','#2a6da8','#c9822a','#e8a84e']
 
 const fmt = (n) => n == null ? '—' : new Intl.NumberFormat('fr-FR').format(n)
 const fmtM = (n) => n == null ? '—' : `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(n)} M€`
+
+const exportTopCodesCSV = (data, year) => {
+  const rows = data.map((t, i) => ({
+    '#': i + 1,
+    'Code LPP': t.code,
+    'Libellé': t.label,
+    'Remb. (M€)': t.rem_millions,
+  }))
+  const headers = Object.keys(rows[0])
+  const csv = [headers.join(';'), ...rows.map(r => headers.map(h => String(r[h]).replace('.', ',')).join(';'))].join('\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `top-codes-lpp-${year}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const exportTopCodesExcel = (data, year) => {
+  const rows = data.map((t, i) => ({
+    '#': i + 1,
+    'Code LPP': t.code,
+    'Libellé': t.label,
+    'Remb. (M€)': t.rem_millions,
+  }))
+  const ws = XLSX.utils.json_to_sheet(rows)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Top Codes')
+  XLSX.writeFile(wb, `top-codes-lpp-${year}.xlsx`)
+}
 
 export default function Dashboard() {
   const [year, setYear]     = useState(2024)
@@ -33,84 +155,68 @@ export default function Dashboard() {
   }, [year, source])
 
   return (
-    <div className="fade-up">
-      <div className="page-header">
-        <div className="eyebrow">Vue nationale</div>
-        <h2>Marché du remboursement LPP</h2>
-        <p>Dépenses de remboursement AMELI sur l'ensemble du territoire métropolitain.</p>
-      </div>
-
-      <div className="page-body">
-        {/* Year selector */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
-          {YEARS.map(y => (
-            <button key={y} onClick={() => setYear(y)} style={{
-              padding: '6px 16px',
-              border: `1px solid ${y === year ? 'var(--navy)' : 'var(--border)'}`,
-              background: y === year ? 'var(--navy)' : 'transparent',
-              color: y === year ? '#fff' : 'var(--text-secondary)',
-              borderRadius: 'var(--radius)',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.82rem',
-              transition: 'all 0.2s',
-            }}>{y}</button>
-          ))}
+    <>
+      <style>{styles}</style>
+      <div className="dashboard-hifi fade-up">
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Vue nationale</div>
+            <h1>Marché du remboursement LPP</h1>
+            <p>Dépenses de remboursement AMELI sur l'ensemble du territoire métropolitain.</p>
+          </div>
         </div>
 
-        {/* Classification source toggle */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 28, alignItems: 'center' }}>
-          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Classification :</span>
-          <button onClick={() => setSource('ref')} style={{
-            padding: '6px 14px',
-            border: `1px solid ${source === 'ref' ? 'var(--navy)' : 'var(--border)'}`,
-            background: source === 'ref' ? 'var(--navy)' : 'transparent',
-            color: source === 'ref' ? '#fff' : 'var(--text-secondary)',
-            borderRadius: 'var(--radius)',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-body)',
-            fontSize: '0.82rem',
-            transition: 'all 0.2s',
-          }}>📋 Référence</button>
-          <button onClick={() => setSource('orig')} style={{
-            padding: '6px 14px',
-            border: `1px solid ${source === 'orig' ? 'var(--navy)' : 'var(--border)'}`,
-            background: source === 'orig' ? 'var(--navy)' : 'transparent',
-            color: source === 'orig' ? '#fff' : 'var(--text-secondary)',
-            borderRadius: 'var(--radius)',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-body)',
-            fontSize: '0.82rem',
-            transition: 'all 0.2s',
-          }}>📊 Originale</button>
+        <div className="controls">
+          <div className="controls-group">
+            <span className="controls-label">Année</span>
+            <div className="controls-buttons">
+              {YEARS.map(y => (
+                <button key={y} onClick={() => setYear(y)} className={`btn ${y === year ? 'active' : ''}`}>
+                  {y}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="controls-group">
+            <span className="controls-label">Classification</span>
+            <div className="controls-buttons">
+              <button onClick={() => setSource('ref')} className={`btn ${source === 'ref' ? 'active' : ''}`}>
+                Référence
+              </button>
+              <button onClick={() => setSource('orig')} className={`btn ${source === 'orig' ? 'active' : ''}`}>
+                Originale
+              </button>
+            </div>
+          </div>
         </div>
 
         {loading ? (
           <div className="loading"><div className="spinner" /> Chargement…</div>
         ) : (
           <>
-            <div className="kpi-grid" style={{ animationDelay: '0.1s' }}>
+            <div className="kpi-grid">
               <div className="kpi-card fade-up">
-                <div className="kpi-label">Remboursements totaux</div>
-                <div className="kpi-value">{kpi ? fmtM(kpi.rem_millions) : '—'}</div>
-                <div className="kpi-unit">Montant remboursé en {year}</div>
+                <div className="label">Remboursements totaux</div>
+                <div className="value">{kpi ? fmtM(kpi.rem_millions) : '—'}</div>
+                <div className="unit">Montant remboursé en {year}</div>
+              </div>
+              <div className="kpi-card fade-up" style={{ animationDelay: '0.05s' }}>
+                <div className="label">Quantités prescrites</div>
+                <div className="value">{kpi ? fmt(kpi.qte_totale) : '—'}</div>
+                <div className="unit">Actes / produits remboursés</div>
               </div>
               <div className="kpi-card fade-up" style={{ animationDelay: '0.1s' }}>
-                <div className="kpi-label">Quantités prescrites</div>
-                <div className="kpi-value">{kpi ? fmt(kpi.qte_totale) : '—'}</div>
-                <div className="kpi-unit">Actes / produits remboursés</div>
-              </div>
-              <div className="kpi-card fade-up" style={{ animationDelay: '0.2s' }}>
-                <div className="kpi-label">Codes LPP actifs</div>
-                <div className="kpi-value">{kpi ? fmt(kpi.nb_codes) : '—'}</div>
-                <div className="kpi-unit">Codes distincts remboursés</div>
+                <div className="label">Codes LPP actifs</div>
+                <div className="value">{kpi ? fmt(kpi.nb_codes) : '—'}</div>
+                <div className="unit">Codes distincts remboursés</div>
               </div>
             </div>
 
             {/* Évolution nationale totale */}
             {evol.length > 0 && (
-              <div className="card fade-up" style={{ marginBottom: 24, animationDelay: '0.25s' }}>
-                <div className="card-title">
+              <div className="card fade-up" style={{ marginBottom: 24, animationDelay: '0.15s' }}>
+                <div className="title">
                   Évolution du marché total
                   <span className="subtitle">Tous codes LPP · France métropolitaine · en M€</span>
                 </div>
@@ -171,8 +277,8 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="card fade-up" style={{ animationDelay: '0.3s' }}>
-              <div className="card-title">
+            <div className="card fade-up" style={{ animationDelay: '0.2s' }}>
+              <div className="title">
                 Top 10 codes LPP par remboursement
                 <span className="subtitle">{year} · France métropolitaine</span>
               </div>
@@ -206,6 +312,30 @@ export default function Dashboard() {
 
               {/* Table under chart */}
               <div style={{ marginTop: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>
+                    Top 10 codes
+                    <span style={{ fontSize: '12px', color: 'var(--muted)', fontWeight: 400, marginLeft: 8 }}>{year} · France métropolitaine</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => exportTopCodesCSV(tops, year)} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                      border: '1px solid var(--line)', borderRadius: 8, background: '#fff',
+                      color: 'var(--ink-2)', fontSize: '12px', fontWeight: 500, cursor: 'pointer'
+                    }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      CSV
+                    </button>
+                    <button onClick={() => exportTopCodesExcel(tops, year)} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                      border: '1px solid #c7dec1', borderRadius: 8, background: '#f4fbf0',
+                      color: '#2f5e38', fontSize: '12px', fontWeight: 500, cursor: 'pointer'
+                    }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Excel
+                    </button>
+                  </div>
+                </div>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -231,6 +361,6 @@ export default function Dashboard() {
           </>
         )}
       </div>
-    </div>
+    </>
   )
 }
