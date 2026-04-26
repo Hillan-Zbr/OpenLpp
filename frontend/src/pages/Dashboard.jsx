@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import * as XLSX from 'xlsx'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line, CartesianGrid, ReferenceDot } from 'recharts'
 
 const styles = `
@@ -96,6 +97,37 @@ const COLORS = ['#0f2d4a','#1a4a73','#2a6da8','#c9822a','#e8a84e']
 
 const fmt = (n) => n == null ? '—' : new Intl.NumberFormat('fr-FR').format(n)
 const fmtM = (n) => n == null ? '—' : `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(n)} M€`
+
+const exportTopCodesCSV = (data, year) => {
+  const rows = data.map((t, i) => ({
+    '#': i + 1,
+    'Code LPP': t.code,
+    'Libellé': t.label,
+    'Remb. (M€)': t.rem_millions,
+  }))
+  const headers = Object.keys(rows[0])
+  const csv = [headers.join(';'), ...rows.map(r => headers.map(h => String(r[h]).replace('.', ',')).join(';'))].join('\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `top-codes-lpp-${year}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const exportTopCodesExcel = (data, year) => {
+  const rows = data.map((t, i) => ({
+    '#': i + 1,
+    'Code LPP': t.code,
+    'Libellé': t.label,
+    'Remb. (M€)': t.rem_millions,
+  }))
+  const ws = XLSX.utils.json_to_sheet(rows)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Top Codes')
+  XLSX.writeFile(wb, `top-codes-lpp-${year}.xlsx`)
+}
 
 export default function Dashboard() {
   const [year, setYear]     = useState(2024)
@@ -280,6 +312,30 @@ export default function Dashboard() {
 
               {/* Table under chart */}
               <div style={{ marginTop: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>
+                    Top 10 codes
+                    <span style={{ fontSize: '12px', color: 'var(--muted)', fontWeight: 400, marginLeft: 8 }}>{year} · France métropolitaine</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => exportTopCodesCSV(tops, year)} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                      border: '1px solid var(--line)', borderRadius: 8, background: '#fff',
+                      color: 'var(--ink-2)', fontSize: '12px', fontWeight: 500, cursor: 'pointer'
+                    }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      CSV
+                    </button>
+                    <button onClick={() => exportTopCodesExcel(tops, year)} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                      border: '1px solid #c7dec1', borderRadius: 8, background: '#f4fbf0',
+                      color: '#2f5e38', fontSize: '12px', fontWeight: 500, cursor: 'pointer'
+                    }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Excel
+                    </button>
+                  </div>
+                </div>
                 <table className="data-table">
                   <thead>
                     <tr>
