@@ -629,22 +629,20 @@ export default function Benchmark() {
                       singleValue: (b) => ({ ...b, whiteSpace: 'normal', fontSize: '0.82rem' }),
                     }}
                   />
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-                    <button onClick={() => {
-                      if (lppOptions.length > 0) {
-                        setSelLpp({ value: '__all-codes__', label: `Tous les codes (${lppOptions.length})` })
-                      }
-                    }} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 10px',
-                      border: codeDone && selLpp?.value === '__all-codes__' ? '1.5px solid var(--accent)' : '1.5px solid var(--accent)',
-                      background: codeDone && selLpp?.value === '__all-codes__' ? 'var(--accent)' : '#fff',
-                      color: codeDone && selLpp?.value === '__all-codes__' ? '#fff' : 'var(--ink)',
-                      fontSize: '12px', fontWeight: '600', cursor: 'pointer', borderRadius: '999px'
-                    }}>
-                      <input type="checkbox" checked={selLpp?.value === '__all-codes__'} onChange={() => {}} style={{ accentColor: 'var(--accent)', cursor: 'pointer' }} />
-                      <span><b>Tous les codes LPP</b></span>
-                    </button>
-                  </div>
+                  {lppOptions.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                      <button onClick={() => setSelLpp({ value: '__all-codes__', label: `Tous les codes (${lppOptions.length})` })} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 10px',
+                        border: selLpp?.value === '__all-codes__' ? '1.5px solid var(--accent)' : '1.5px solid var(--accent)',
+                        background: selLpp?.value === '__all-codes__' ? 'var(--accent)' : '#fff',
+                        color: selLpp?.value === '__all-codes__' ? '#fff' : 'var(--ink)',
+                        fontSize: '12px', fontWeight: '600', cursor: 'pointer', borderRadius: '999px'
+                      }}>
+                        <input type="checkbox" checked={selLpp?.value === '__all-codes__'} onChange={() => {}} style={{ accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                        <span><b>Tous les codes</b></span>
+                      </button>
+                    </div>
+                  )}
                   {codeDone && (
                     <div className="sub" style={{ fontSize: '11.5px' }}>
                       Groupement de {lppOptions.length} codes LPP — <a style={{ color: 'var(--accent-2)', textDecoration: 'underline', cursor: 'pointer' }}>voir le détail</a> · ou <a style={{ color: 'var(--accent-2)', textDecoration: 'underline', cursor: 'pointer' }}>saisir un code précis</a>.

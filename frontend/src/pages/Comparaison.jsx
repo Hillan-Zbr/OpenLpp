@@ -501,8 +501,15 @@ export default function Comparaison() {
                   />
                   {selD1 && lppOptions.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-                      <button onClick={() => setSelLpp({ value: '__domaine__', label: `Tous les codes (${lppOptions.length})` })} className="btn">
-                        Tous les codes
+                      <button onClick={() => setSelLpp({ value: '__domaine__', label: `Tous les codes (${lppOptions.length})` })} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 10px',
+                        border: selLpp?.value === '__domaine__' ? '1.5px solid var(--accent)' : '1.5px solid var(--accent)',
+                        background: selLpp?.value === '__domaine__' ? 'var(--accent)' : '#fff',
+                        color: selLpp?.value === '__domaine__' ? '#fff' : 'var(--ink)',
+                        fontSize: '12px', fontWeight: '600', cursor: 'pointer', borderRadius: '999px'
+                      }}>
+                        <input type="checkbox" checked={selLpp?.value === '__domaine__'} onChange={() => {}} style={{ accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                        <span><b>Tous les codes</b></span>
                       </button>
                     </div>
                   )}
@@ -526,8 +533,15 @@ export default function Comparaison() {
                     noOptionsMessage={() => 'Aucune région'}
                   />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-                    <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} className="btn">
-                      France entière
+                    <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 10px',
+                      border: regionsDone ? '1.5px solid var(--accent)' : '1.5px solid var(--accent)',
+                      background: regionsDone ? 'var(--accent)' : '#fff',
+                      color: regionsDone ? '#fff' : 'var(--ink)',
+                      fontSize: '12px', fontWeight: '600', cursor: 'pointer', borderRadius: '999px'
+                    }}>
+                      <input type="checkbox" checked={regionsDone} onChange={() => {}} style={{ accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                      <span><b>France entière</b></span>
                     </button>
                   </div>
                 </div>
