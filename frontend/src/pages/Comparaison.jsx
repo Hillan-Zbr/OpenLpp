@@ -26,6 +26,197 @@ const BEN_TO_JV = {
   93: ['FR-04','FR-05','FR-06','FR-13','FR-20','FR-83','FR-84'],
 }
 
+const styles = `
+  .comparaison-hifi {
+    --nav: #102e4b;
+    --nav-2: #0b2238;
+    --nav-hi: #1a4368;
+    --nav-ink: #dbe6f1;
+    --nav-muted: #7c98b3;
+    --paper: #f5f2ed;
+    --paper-2: #ffffff;
+    --ink: #1b2230;
+    --ink-2: #3b4657;
+    --muted: #7a8498;
+    --line: #e1dcd2;
+    --line-2: #ebe7dd;
+    --card: #ffffff;
+    --accent: #c9822a;
+    --accent-2: #a86a1f;
+    --accent-soft: #f7e9d1;
+    --accent-softer: #fbf3e4;
+    --ok: #3f7d4a;
+    --ok-soft: #e2efdf;
+    --focus-ring: 0 0 0 3px rgba(201,130,42,.22);
+    --shadow-sm: 0 1px 2px rgba(16,46,75,.06);
+    --shadow-md: 0 1px 2px rgba(16,46,75,.06), 0 8px 20px -12px rgba(16,46,75,.18);
+    padding: 0 32px;
+  }
+
+  .comparaison-hifi .page-head { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
+  .comparaison-hifi .page-head .eyebrow { font-size: 11px; letter-spacing: .18em; color: var(--accent-2); text-transform: uppercase; font-weight: 600; }
+  .comparaison-hifi .page-head h1 { margin: 4px 0 4px; font-size: 24px; font-weight: 700; letter-spacing: -.3px; line-height: 1.15; }
+  .comparaison-hifi .page-head p { margin: 0; color: var(--ink-2); font-size: 13.5px; max-width: 720px; }
+
+  .comparaison-hifi .classif {
+    display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: stretch;
+    padding: 14px 16px; background: linear-gradient(180deg,#f4fbf0,#eaf5e4);
+    border: 1px solid #c7dec1; border-radius: 10px;
+    box-shadow: 0 0 0 1px rgba(63,125,74,.06); margin-bottom: 14px; position: relative;
+  }
+
+  .comparaison-hifi .classif .lead {
+    display: flex; flex-direction: column; justify-content: center; gap: 4px; min-width: 210px;
+  }
+
+  .comparaison-hifi .classif .lead .title {
+    display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink); font-size: 14px;
+  }
+
+  .comparaison-hifi .classif .lead .title .n {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--ok); color: #fff; display: grid; place-items: center;
+    font-size: 12px; font-weight: 700;
+  }
+
+  .comparaison-hifi .seg {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 4px;
+    background: rgba(255,255,255,.6); border: 1px solid rgba(168,106,31,.2); border-radius: 12px;
+  }
+
+  .comparaison-hifi .seg button {
+    all: unset; cursor: pointer;
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 9px; border: 1px solid transparent;
+    transition: background .15s ease, border-color .15s ease;
+  }
+
+  .comparaison-hifi .seg button:hover { background: #fff; }
+
+  .comparaison-hifi .seg button.on {
+    background: #fff; border-color: var(--accent); box-shadow: 0 1px 2px rgba(168,106,31,.1);
+  }
+
+  .comparaison-hifi .seg .ic {
+    width: 34px; height: 34px; border-radius: 8px; background: #fff; border: 1px solid var(--line);
+    display: grid; place-items: center; font-weight: 800; font-size: 13px; color: var(--ink-2);
+  }
+
+  .comparaison-hifi .seg button.on .ic {
+    background: var(--accent); border-color: var(--accent-2); color: #fff;
+  }
+
+  .comparaison-hifi .seg .tx { min-width: 0; }
+  .comparaison-hifi .seg .tt { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.2; }
+  .comparaison-hifi .seg .dd { font-size: 11.5px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+
+  .comparaison-hifi .seg .check {
+    width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line);
+    display: grid; place-items: center;
+  }
+
+  .comparaison-hifi .seg button.on .check {
+    background: var(--accent); border-color: var(--accent-2); color: #fff;
+  }
+
+  .comparaison-hifi .section {
+    border: 1px solid var(--line); border-radius: 12px; background: #fff;
+    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+  }
+
+  .comparaison-hifi .section.done {
+    border-color: #c7dec1; background: #fbfef9; box-shadow: 0 0 0 1px rgba(63,125,74,.06);
+  }
+
+  .comparaison-hifi .section.done > .sh {
+    background: linear-gradient(180deg,#f4fbf0,#eaf5e4); border-bottom-color: #d4e5cc;
+  }
+
+  .comparaison-hifi .section.done > .sh .n {
+    background: var(--ok); border-color: var(--ok); color: #fff;
+  }
+
+  .comparaison-hifi .section.done > .sh h4::after {
+    content: " ✓ Complété"; font-size: 11px; color: var(--ok); font-weight: 600;
+    margin-left: 6px; letter-spacing: .02em;
+  }
+
+  .comparaison-hifi .section.current {
+    border-color: var(--accent); box-shadow: 0 0 0 1px rgba(201,130,42,.15), 0 4px 12px -6px rgba(201,130,42,.25);
+  }
+
+  .comparaison-hifi .section.current > .sh {
+    background: linear-gradient(180deg,#fffaf1,#fbf3e4); border-bottom-color: rgba(201,130,42,.3);
+  }
+
+  .comparaison-hifi .section.current > .sh .n {
+    background: var(--accent); border-color: var(--accent-2); color: #fff;
+  }
+
+  .comparaison-hifi .section.current > .sh h4::after {
+    content: " · en cours"; font-size: 11px; color: var(--accent-2); font-weight: 600;
+    margin-left: 2px; letter-spacing: .02em;
+  }
+
+  .comparaison-hifi .section > .sh {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px dashed var(--line);
+    background: linear-gradient(180deg,#fff,#fbf8f2);
+  }
+
+  .comparaison-hifi .section .sh .n {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-2);
+    border: 1px solid var(--accent); display: grid; place-items: center; font-size: 11px; font-weight: 700;
+  }
+
+  .comparaison-hifi .section .sh h4 { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink); }
+
+  .comparaison-hifi .section .sh .desc { font-size: 11.5px; color: var(--muted); margin-left: 6px; }
+
+  .comparaison-hifi .section .sb { padding: 10px 12px; }
+
+  .comparaison-hifi .form { display: grid; gap: 8px; }
+
+  .comparaison-hifi .row { display: grid; gap: 10px; }
+  .comparaison-hifi .row.c2 { grid-template-columns: 1fr 1fr; }
+  .comparaison-hifi .row.c3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .comparaison-hifi .field { display: flex; flex-direction: column; min-width: 0; }
+
+  .comparaison-hifi .field label {
+    display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
+    color: var(--ink-2); letter-spacing: .02em; margin-bottom: 5px; text-transform: uppercase;
+  }
+
+  .comparaison-hifi .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+
+  .comparaison-hifi .btn:hover {
+    background: var(--accent-softer); border-color: var(--accent); color: var(--accent-2);
+  }
+
+  .comparaison-hifi .btn-primary {
+    background: linear-gradient(180deg,var(--accent),var(--accent-2));
+    color: #fff; border: 1px solid var(--accent-2); border-radius: 9px; padding: 11px 18px;
+    font-weight: 600; font-size: 13.5px; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 8px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 4px 10px -4px rgba(168,106,31,.45);
+  }
+
+  .comparaison-hifi .btn-primary:hover { filter: brightness(1.04); }
+  .comparaison-hifi .btn-primary.disabled {
+    background: #d9d3c4; border-color: #cfc9ba; box-shadow: none; cursor: not-allowed; color: #736d5e;
+  }
+
+  .comparaison-hifi .rs__menu { z-index: 100 !important; }
+
+  @media (max-width: 1100px) {
+    .comparaison-hifi .row.c2 { grid-template-columns: 1fr; }
+  }
+`
+
 const fmtEur = (v) => v == null ? '—' : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v)
 
 const truncLabel = (s, n = 48) => s && s.length > n ? s.substring(0, n) + '…' : s
@@ -194,232 +385,190 @@ export default function Comparaison() {
     setSelLpp(null); setSelRegs([]); setData([])
   }
 
+  const classifDone = true
+  const domainsDone = selD1 && selD2 && selD4
+  const codeDone = selLpp
+  const regionsDone = selRegs.length > 0
+
   return (
-    <div className="fade-up">
-      <div className="page-header">
-        <div className="eyebrow">Comparaison régions</div>
-        <h2>Position relative par région</h2>
-        <p>Pour un code LPP donné, visualisez le poids de chaque région dans le remboursement national.</p>
-      </div>
+    <>
+      <style>{styles}</style>
+      <div className="comparaison-hifi fade-up">
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Comparaison régions</div>
+            <h1>Position relative par région</h1>
+            <p>Pour un code LPP donné, visualisez le poids de chaque région dans le remboursement national.</p>
+          </div>
+        </div>
 
-      <div className="page-body">
-        <div className="card" style={{ marginBottom: 28 }}>
-
-          {/* ── Titre + Réinitialiser ── */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <div className="card-title" style={{ marginBottom: 0 }}>Paramètres d'analyse</div>
-            <button onClick={handleReset} style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '5px 12px', fontSize: '0.75rem',
-              background: 'transparent', color: 'var(--text-muted)',
-              border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-              cursor: 'pointer', fontFamily: 'var(--font-body)',
-              transition: 'all 0.2s',
-            }}>
-              ↺ Réinitialiser
+        <div className="classif">
+          <div className="lead">
+            <div className="title">
+              <span className="n">1</span> Classification LPP
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--ink-2)', lineHeight: '1.4' }}>
+              Ce choix détermine les libellés de domaines et les codes proposés.
+            </div>
+          </div>
+          <div className="seg">
+            <button className={source === 'ref' ? 'on' : ''} onClick={() => { setSource('ref'); setSelD1(null); setSelD2(null); setSelD4(null); setSelLpp(null) }}>
+              <div className="ic">R</div>
+              <div className="tx">
+                <div className="tt">Classification de <b>Référence</b></div>
+                <div className="dd">Regroupement SNADOM · benchmark interne · recommandé</div>
+              </div>
+              <div className="check">
+                {source === 'ref' && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5L20 7"/></svg>}
+              </div>
+            </button>
+            <button className={source === 'orig' ? 'on' : ''} onClick={() => { setSource('orig'); setSelD1(null); setSelD2(null); setSelD4(null); setSelLpp(null) }}>
+              <div className="ic">O</div>
+              <div className="tx">
+                <div className="tt">Classification <b>Originale</b></div>
+                <div className="dd">Nomenclature officielle LPP · codes &amp; libellés publiés</div>
+              </div>
+              <div className="check">
+                {source === 'orig' && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5L20 7"/></svg>}
+              </div>
             </button>
           </div>
+        </div>
 
-          {/* ── Bandeau 3 étapes ── */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-            border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-            overflow: 'hidden', marginBottom: 20,
-          }}>
-            {[
-              { n: '1', title: 'Choisir un périmètre', desc: 'Filtrez par domaine pour affiner la liste, ou saisissez directement un code ou mot-clé dans "Code LPP"' },
-              { n: '2', title: 'Sélectionner le code LPP', desc: 'Choisissez un code précis dans la liste, ou cliquez "Tous les codes" pour agréger tout un domaine' },
-              { n: '3', title: 'Choisir les régions', desc: 'Sélectionnez une ou plusieurs régions, ou cliquez "France entière" pour couvrir tout le territoire' },
-            ].map((step, i) => (
-              <div key={step.n} style={{
-                padding: '12px 16px',
-                borderRight: i < 2 ? '1px solid var(--border)' : 'none',
-                background: 'rgba(15,45,74,0.02)',
-                display: 'flex', gap: 10, alignItems: 'flex-start',
-              }}>
-                <div style={{
-                  minWidth: 22, height: 22,
-                  background: 'var(--navy)', color: '#fff',
-                  borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700,
-                  flexShrink: 0, marginTop: 1,
-                }}>{step.n}</div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-primary)', marginBottom: 3 }}>{step.title}</div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{step.desc}</div>
+        <div className="form">
+          <div className={`section ${domainsDone ? 'done' : ''}`}>
+            <div className="sh">
+              <div className="n">2</div>
+              <h4>Domaines <span style={{ color: 'var(--muted)', fontWeight: 500 }}>(filtrage optionnel)</span></h4>
+              <span className="desc">affinez la liste des codes · cascade D1 → D2 → D3</span>
+            </div>
+            <div className="sb">
+              <div className="row c3">
+                <div className="field">
+                  <label>{domLabel1}</label>
+                  <Select classNamePrefix="rs" components={rsComponents} isClearable
+                    options={domaines.map(d => ({ value: d.label, label: d.label }))}
+                    value={selD1}
+                    onChange={v => { setSelD1(v); setSelD2(null); setSelD4(null); setSelLpp(null) }}
+                    placeholder="Tous…"
+                  />
+                </div>
+
+                <div className="field">
+                  <label>{domLabel2}</label>
+                  <Select classNamePrefix="rs" components={rsComponents} isClearable
+                    options={d2Options}
+                    value={selD2}
+                    isDisabled={!selD1}
+                    onChange={v => { setSelD2(v); setSelD4(null); setSelLpp(null) }}
+                    placeholder={selD1 ? 'Tous…' : '— choisir Domaine 1 d\'abord'}
+                  />
+                </div>
+
+                <div className="field">
+                  <label>{domLabel4}</label>
+                  <Select classNamePrefix="rs" components={rsComponents} isClearable
+                    options={d4Options}
+                    value={selD4}
+                    isDisabled={!selD2}
+                    onChange={v => { setSelD4(v); setSelLpp(null) }}
+                    placeholder={selD2 ? 'Tous…' : '— choisir Domaine 2 d\'abord'}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* ── Toggle Classification ── */}
-          <div style={{ marginBottom: 20, display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Classification :</span>
-            <button onClick={() => { setSource('ref'); setSelD1(null); setSelD2(null); setSelD4(null); setSelLpp(null) }} style={{
-              padding: '6px 14px',
-              border: `1px solid ${source === 'ref' ? 'var(--navy)' : 'var(--border)'}`,
-              background: source === 'ref' ? 'var(--navy)' : 'transparent',
-              color: source === 'ref' ? '#fff' : 'var(--text-secondary)',
-              borderRadius: 'var(--radius)',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-body)',
-              fontSize: '0.82rem',
-              transition: 'all 0.2s',
-            }}>📋 Référence</button>
-            <button onClick={() => { setSource('orig'); setSelD1(null); setSelD2(null); setSelD4(null); setSelLpp(null) }} style={{
-              padding: '6px 14px',
-              border: `1px solid ${source === 'orig' ? 'var(--navy)' : 'var(--border)'}`,
-              background: source === 'orig' ? 'var(--navy)' : 'transparent',
-              color: source === 'orig' ? '#fff' : 'var(--text-secondary)',
-              borderRadius: 'var(--radius)',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-body)',
-              fontSize: '0.82rem',
-              transition: 'all 0.2s',
-            }}>📊 Originale</button>
-          </div>
-
-          {/* ── Filtres domaines ── */}
-          <div style={{ marginBottom: 20, padding: '14px 16px', background: 'rgba(15,45,74,0.04)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>
-              Filtrer par domaine <span style={{ fontStyle: 'italic', textTransform: 'none', letterSpacing: 0 }}>(optionnel — affine la liste des codes LPP)</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-              <div className="form-group">
-                <label>{domLabel1}</label>
-                <Select classNamePrefix="rs" components={rsComponents} isClearable
-                  options={domaines.map(d => ({ value: d.label, label: truncLabel(d.label) }))}
-                  value={selD1}
-                  onChange={v => { setSelD1(v); setSelD2(null); setSelD4(null); setSelLpp(null) }}
-                  placeholder="Tous…"
-                />
+          </div>
+
+          <div className="row c2" style={{ gap: '12px' }}>
+            <div className={`section ${codeDone ? 'done' : ''}`}>
+              <div className="sh">
+                <div className="n">3</div>
+                <h4>Code LPP</h4>
+                <span className="desc">ou saisissez directement</span>
               </div>
-              <div className="form-group">
-                <label>{domLabel2}</label>
-                <Select classNamePrefix="rs" components={rsComponents} isClearable
-                  options={d2Options}
-                  value={selD2}
-                  isDisabled={!selD1}
-                  onChange={v => { setSelD2(v); setSelD4(null); setSelLpp(null) }}
-                  placeholder={selD1 ? 'Tous…' : `— choisir ${domLabel1} d'abord`}
-                />
+              <div className="sb">
+                <div className="field">
+                  <label>Code LPP</label>
+                  <Select classNamePrefix="rs" components={rsComponents} options={lppOptions} value={selLpp} onChange={setSelLpp}
+                    onInputChange={setLppQuery} isLoading={lppLoading}
+                    placeholder="Ex : 1149511 ou PPC…"
+                    noOptionsMessage={() => lppQuery.length < 2 ? 'Saisissez au moins 2 caractères' : 'Aucun résultat'}
+                    filterOption={() => true} isClearable
+                    styles={{
+                      option: (b) => ({ ...b, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.4 }),
+                      singleValue: (b) => ({ ...b, whiteSpace: 'normal', fontSize: '0.82rem' }),
+                    }}
+                  />
+                  {selD1 && lppOptions.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                      <button onClick={() => setSelLpp({ value: '__domaine__', label: `Tous les codes (${lppOptions.length})` })} className="btn">
+                        Tous les codes
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="form-group">
-                <label>{domLabel4}</label>
-                <Select classNamePrefix="rs" components={rsComponents} isClearable
-                  options={d4Options}
-                  value={selD4}
-                  isDisabled={!selD2}
-                  onChange={v => { setSelD4(v); setSelLpp(null) }}
-                  placeholder={selD2 ? 'Tous…' : `— choisir ${domLabel2} d'abord`}
-                />
+            </div>
+
+            <div className={`section ${regionsDone ? 'done' : 'current'}`}>
+              <div className="sh">
+                <div className="n">4</div>
+                <h4>Région(s)</h4>
+              </div>
+              <div className="sb">
+                <div className="field">
+                  <label>Régions</label>
+                  <Select classNamePrefix="rs" components={rsComponents} isMulti
+                    options={ALL_METRO_REGIONS}
+                    value={selRegs}
+                    onChange={setSelRegs}
+                    placeholder="Sélectionner…"
+                    noOptionsMessage={() => 'Aucune région'}
+                  />
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                    <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} className="btn">
+                      France entière
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ── Code LPP + Région(s) côte à côte ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
-            <div className="form-group">
-              <label>
-                Code LPP
-                <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 6, fontSize: '0.68rem', fontStyle: 'italic' }}>
-                  — saisissez un code ou un mot-clé
-                </span>
-              </label>
-              <Select
-                classNamePrefix="rs" components={rsComponents}
-                options={lppOptions}
-                value={selLpp}
-                onChange={setSelLpp}
-                onInputChange={setLppQuery}
-                isLoading={lppLoading}
-                placeholder="Ex : 1149511 ou PPC ou APNEE…"
-                noOptionsMessage={() => lppQuery.length < 2 ? 'Saisissez au moins 2 caractères' : 'Aucun résultat'}
-                filterOption={() => true}
-                isClearable
-                styles={{
-                  option: (base) => ({ ...base, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.4 }),
-                  singleValue: (base) => ({ ...base, whiteSpace: 'normal', fontSize: '0.82rem' }),
-                }}
-              />
-              {selD1 && lppOptions.length > 0 && (
-                <button onClick={() => setSelLpp({ value: '__domaine__', label: `Tous les codes — ${selD2?.value || selD1?.value}` })} style={{
-                  marginTop: 6, padding: '4px 12px', fontSize: '0.72rem',
-                  background: 'transparent', color: 'var(--navy)',
-                  border: '1px solid var(--navy)', borderRadius: 'var(--radius)',
-                  cursor: 'pointer', fontFamily: 'var(--font-body)',
-                }}>
-                  📋 Sélectionner tous les codes ({lppOptions.length})
-                </button>
-              )}
+          <div className={`section ${true ? 'done' : ''}`}>
+            <div className="sh">
+              <div className="n">5</div>
+              <h4>Année</h4>
             </div>
-
-            <div className="form-group">
-              <label>
-                Région(s)
-                <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 6, fontSize: '0.68rem', fontStyle: 'italic' }}>
-                  — sélection multiple possible
-                </span>
-              </label>
-              <Select
-                classNamePrefix="rs" components={rsComponents}
-                isMulti
-                options={ALL_METRO_REGIONS}
-                value={selRegs}
-                onChange={setSelRegs}
-                placeholder="Sélectionner une ou plusieurs régions…"
-                noOptionsMessage={() => 'Aucune région'}
-              />
-              <button onClick={() => setSelRegs(ALL_METRO_REGIONS)} style={{
-                marginTop: 6, width: '100%', padding: '5px 12px', fontSize: '0.75rem',
-                background: 'transparent', color: 'var(--navy)',
-                border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                cursor: 'pointer', fontFamily: 'var(--font-body)',
-                transition: 'all 0.2s',
-              }}>
-                🗺 Sélectionner France entière
-              </button>
+            <div className="sb">
+              <div className="field">
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {YEARS.map(y => (
+                    <button key={y} onClick={() => setYear(y)} className="btn" style={{
+                      border: `1px solid ${y === year ? 'var(--accent)' : 'var(--line)'}`,
+                      background: y === year ? 'var(--accent-softer)' : '#fff',
+                      color: y === year ? 'var(--accent-2)' : 'var(--ink)',
+                    }}>
+                      {y}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* ── Année ── */}
-          <div className="form-group" style={{ marginBottom: 20 }}>
-            <label>Année</label>
-            <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
-              {YEARS.map(y => (
-                <button key={y} onClick={() => setYear(y)} style={{
-                  padding: '6px 14px',
-                  border: `1px solid ${y === year ? 'var(--navy)' : 'var(--border)'}`,
-                  background: y === year ? 'var(--navy)' : 'transparent',
-                  color: y === year ? '#fff' : 'var(--text-secondary)',
-                  borderRadius: 'var(--radius)', cursor: 'pointer',
-                  fontFamily: 'var(--font-mono)', fontSize: '0.8rem',
-                  transition: 'all 0.2s',
-                }}>{y}</button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={fetchData}
-            disabled={!canQuery}
-            style={{
-              padding: '10px 28px',
-              background: canQuery ? 'var(--navy)' : 'var(--border)',
-              color: canQuery ? '#fff' : 'var(--text-muted)',
-              border: 'none', borderRadius: 'var(--radius)',
-              cursor: canQuery ? 'pointer' : 'default',
-              fontFamily: 'var(--font-body)', fontSize: '0.88rem',
-              fontWeight: 500, transition: 'all 0.2s',
-            }}
-          >
-            Comparer les régions →
+        <div style={{ marginTop: 20, display: 'flex', gap: 12 }}>
+          <button onClick={fetchData} disabled={!canQuery} className={`btn-primary ${!canQuery ? 'disabled' : ''}`}>
+            Comparer les régions
+            <svg className="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+          </button>
+          <button onClick={handleReset} className="btn">
+            ↺ Réinitialiser
           </button>
         </div>
 
-        {/* ── Carte choroplèthe ── */}
-        <div className="card" style={{ marginBottom: 28 }}>
+        <div className="card" style={{ marginBottom: 28, marginTop: 28 }}>
           <div className="card-title">
             Carte des remboursements
             {data.length > 0 && <span className="subtitle">{year} · {selLpp?.label?.split('—')[0]?.trim()}</span>}
@@ -620,6 +769,6 @@ export default function Comparaison() {
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }
